@@ -1,26 +1,23 @@
-package whois
+package serverprovider
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
+	"github.com/muratom/domain-monitoring/services/emitter/internal/whois"
 	"github.com/zonedb/zonedb"
 )
 
-const (
-	DefaultWhoisServer = "whois.iana.org"
-)
-
-type ServerProvider interface {
-	GetServerByFQDN(fqdn string) (string, error)
-}
-
 type ZoneDBServerProvider struct{}
 
+func NewZoneDBServerProvider() *ZoneDBServerProvider {
+	return &ZoneDBServerProvider{}
+}
+
 func (p *ZoneDBServerProvider) GetServerByFQDN(fqdn string) (string, error) {
-	if strings.Index(fqdn, ".") < 0 {
-		return DefaultWhoisServer, nil
+	if !strings.Contains(fqdn, ".") {
+		return whois.DefaultWhoisServer, nil
 	}
 	z := zonedb.PublicZone(fqdn)
 	if z == nil {

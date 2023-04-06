@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.NewFromYaml("../config.yaml", false)
+	cfg, err := config.NewFromYaml("../configs/config.yaml", false)
 	if err != nil {
 		log.Fatalf("unable to load config from .yaml file: %v\n", err)
 		return

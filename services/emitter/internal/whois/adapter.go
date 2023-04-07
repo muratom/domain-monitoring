@@ -10,6 +10,7 @@ type Response struct {
 }
 
 type Record struct {
+	DomainName string
 }
 
 type Adapter interface {

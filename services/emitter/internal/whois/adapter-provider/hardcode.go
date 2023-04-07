@@ -19,11 +19,9 @@ func NewHardcodeAdapterProvider() *HardcodeAdapterProvider {
 		serverprovider.NewZoneDBServerProvider(),
 	)
 	adapterByDomain := map[string]whois.Adapter{
-		"ru":                      ruAdapter,
-		"su":                      ruAdapter,
-		"tatar":                   ruAdapter,
-		"xn--p1ai" /* рф */ :      ruAdapter,
-		"xn--d1acj3b" /* дети */ : ruAdapter,
+		"ru":                 ruAdapter,
+		"su":                 ruAdapter,
+		"xn--p1ai" /* рф */ : ruAdapter,
 	}
 
 	return &HardcodeAdapterProvider{

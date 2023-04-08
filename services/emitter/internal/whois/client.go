@@ -17,19 +17,19 @@ type Client interface {
 	FetchWhois(context.Context, Request) ([]byte, error)
 }
 
-type ClientImpl struct {
+type DialClient struct {
 	dialer net.Dialer
 }
 
-func NewWhoisClient(timeout time.Duration) *ClientImpl {
-	return &ClientImpl{
+func NewWhoisClient(timeout time.Duration) *DialClient {
+	return &DialClient{
 		dialer: net.Dialer{
 			Timeout: timeout,
 		},
 	}
 }
 
-func (c *ClientImpl) FetchWhois(ctx context.Context, req Request) ([]byte, error) {
+func (c *DialClient) FetchWhois(ctx context.Context, req Request) ([]byte, error) {
 	address := fmt.Sprintf("%s:43", req.WhoisServer)
 	conn, err := c.dialer.DialContext(ctx, "tcp", address)
 	if err != nil {

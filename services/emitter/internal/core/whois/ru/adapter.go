@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
 )
 
 // https://tcinet.ru/documents/whois_ru_rf.pdf

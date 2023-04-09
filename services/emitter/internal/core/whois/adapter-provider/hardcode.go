@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/whois"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/whois/ru"
-	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/whois/server-provider"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois/ru"
+	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/whois/server-provider"
 )
 
 type HardcodeAdapterProvider struct {

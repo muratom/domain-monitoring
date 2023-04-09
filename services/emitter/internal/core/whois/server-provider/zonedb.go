@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
 	"github.com/zonedb/zonedb"
 )
 

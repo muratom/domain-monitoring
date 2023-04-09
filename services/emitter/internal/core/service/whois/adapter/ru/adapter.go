@@ -6,12 +6,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
+	whoismodel "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter"
 )
 
 // https://tcinet.ru/documents/whois_ru_rf.pdf
 type Adapter struct {
-	defaultAdapter whois.DefaultAdapter
+	whoisClient adapter.Client
+	whoisServer string
 }
 
 type domainState string
@@ -59,27 +62,42 @@ type Response struct {
 	paidTill time.Time
 }
 
-func NewAdapter(whoisClient whois.Client, whoisProvider whois.ServerProvider) *Adapter {
+func NewAdapter(whoisClient adapter.Client, whoisProvider whois.ServerProvider) *Adapter {
+	server, err := whoisProvider.GetServerByDomain("ru")
+	if err != nil {
+		return nil
+	}
 	return &Adapter{
-		defaultAdapter: *whois.NewDefaultAdapter(whoisClient, whoisProvider),
+		whoisClient: whoisClient,
+		whoisServer: server,
 	}
 }
 
-func (a *Adapter) MakeRequest(ctx context.Context, req whois.Request) (*whois.Response, error) {
-	return a.defaultAdapter.MakeRequest(ctx, req)
+func (a *Adapter) MakeRequest(ctx context.Context, req *whoismodel.Request) (*whoismodel.Response, error) {
+	resp, err := a.whoisClient.FetchWhois(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch a response from WHOIS server: %w", err)
+	}
+
+	return resp, nil
 }
 
-func (a *Adapter) PrepareRequest(ctx context.Context, fqdn string) (*whois.Request, error) {
-	return a.defaultAdapter.PrepareRequest(ctx, fqdn)
+func (a *Adapter) PrepareRequest(ctx context.Context, fqdn string) (*whoismodel.Request, error) {
+	body := []byte(fmt.Sprintf("%s\r\n", fqdn))
+
+	return &whoismodel.Request{
+		WhoisServer: a.whoisServer,
+		Body:        body,
+	}, nil
 }
 
-func (a *Adapter) ParseResponse(ctx context.Context, resp whois.Response) (*whois.Record, error) {
+func (a *Adapter) ParseResponse(ctx context.Context, resp *whoismodel.Response) (*whoismodel.Record, error) {
 	ruResponse, err := parseResponse(ctx, resp.Raw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse raw response from RU WHOIS server: %w", err)
 	}
 
-	return &whois.Record{
+	return &whoismodel.Record{
 		DomainName: ruResponse.domain,
 	}, nil
 }

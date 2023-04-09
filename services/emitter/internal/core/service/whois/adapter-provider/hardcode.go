@@ -4,19 +4,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois/ru"
-	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/whois/server-provider"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
+	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/client"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/ru"
 )
 
 type HardcodeAdapterProvider struct {
 	adapterByDomain map[string]whois.Adapter
 }
 
-func NewHardcodeAdapterProvider() *HardcodeAdapterProvider {
+func NewHardcodeAdapterProvider(whoisServerProvider whois.ServerProvider) *HardcodeAdapterProvider {
 	ruAdapter := ru.NewAdapter(
-		whois.NewWhoisClient(1*time.Minute),
-		serverprovider.NewZoneDBServerProvider(),
+		whoisclient.NewWhoisClient(1*time.Minute),
+		whoisServerProvider,
 	)
 	adapterByDomain := map[string]whois.Adapter{
 		"ru":                 ruAdapter,

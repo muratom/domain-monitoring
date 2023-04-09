@@ -1,7 +1,5 @@
 package dns
 
-import "context"
-
 type IPv4 [4]byte
 type IPv6 [16]byte
 
@@ -33,8 +31,4 @@ type ResourceRecords struct {
 	NS    []NS
 	SRV   []SRV
 	TXT   []TXT
-}
-
-type Client interface {
-	LookupRR(ctx context.Context, host string) (*ResourceRecords, error)
 }

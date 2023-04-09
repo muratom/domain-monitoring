@@ -1,4 +1,4 @@
-package whois
+package client
 
 import (
 	"context"
@@ -6,16 +6,9 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/whois"
 )
-
-type Request struct {
-	WhoisServer string
-	Body        []byte
-}
-
-type Client interface {
-	FetchWhois(context.Context, Request) ([]byte, error)
-}
 
 type DialClient struct {
 	dialer net.Dialer
@@ -29,7 +22,7 @@ func NewWhoisClient(timeout time.Duration) *DialClient {
 	}
 }
 
-func (c *DialClient) FetchWhois(ctx context.Context, req Request) ([]byte, error) {
+func (c *DialClient) FetchWhois(ctx context.Context, req *whois.Request) (*whois.Response, error) {
 	address := fmt.Sprintf("%s:43", req.WhoisServer)
 	conn, err := c.dialer.DialContext(ctx, "tcp", address)
 	if err != nil {
@@ -46,5 +39,8 @@ func (c *DialClient) FetchWhois(ctx context.Context, req Request) ([]byte, error
 		return nil, fmt.Errorf("failed to read a response from a WHOIS server: %w", err)
 	}
 
-	return rawResponse, nil
+	return &whois.Response{
+		Request: *req,
+		Raw:     rawResponse,
+	}, nil
 }

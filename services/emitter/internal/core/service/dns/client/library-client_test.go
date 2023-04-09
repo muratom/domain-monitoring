@@ -1,4 +1,4 @@
-package dns
+package client
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/foxcpp/go-mockdns"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,18 +55,18 @@ func (s *LibraryClientTestSuite) TestAllResourceRecords() {
 	dnsClient := NewLibraryClient(s.netResolver)
 	rr, err := dnsClient.LookupRR(context.Background(), "www.example.com")
 	s.Require().NoError(err)
-	s.Require().ElementsMatch([]IPv4{{1, 2, 3, 4}, {42, 73, 7, 2}}, rr.A)
+	s.Require().ElementsMatch([]dns.IPv4{{1, 2, 3, 4}, {42, 73, 7, 2}}, rr.A)
 	s.Require().Equal("example.com.", rr.CNAME)
-	s.Require().ElementsMatch([]MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
-	s.Require().ElementsMatch([]TXT{"abracadabra"}, rr.TXT)
+	s.Require().ElementsMatch([]dns.MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
+	s.Require().ElementsMatch([]dns.TXT{"abracadabra"}, rr.TXT)
 
-	expectedNS := []NS{
+	expectedNS := []dns.NS{
 		{Host: "ns1.example.com."},
 		{Host: "ns2.example.com."},
 	}
 	s.Require().ElementsMatch(expectedNS, rr.NS)
 
-	expectedSRV := []SRV{
+	expectedSRV := []dns.SRV{
 		{
 			Target:   "sipserver.example.com.",
 			Port:     72,

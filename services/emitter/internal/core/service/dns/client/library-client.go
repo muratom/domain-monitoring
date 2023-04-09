@@ -1,9 +1,11 @@
-package dns
+package client
 
 import (
 	"context"
 	"fmt"
 	"net"
+
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 )
 
 type LibraryClient struct {
@@ -17,20 +19,20 @@ func NewLibraryClient(resolver *net.Resolver) *LibraryClient {
 	}
 }
 
-func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*ResourceRecords, error) {
+func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*dns.ResourceRecords, error) {
 	ips, err := c.resolver.LookupIP(ctx, "ip", host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IP addresses for the host (%s): %w", host, err)
 	}
 
-	ipv4s := make([]IPv4, 0, len(ips))
-	ipv6s := make([]IPv6, 0, len(ips))
+	ipv4s := make([]dns.IPv4, 0, len(ips))
+	ipv6s := make([]dns.IPv6, 0, len(ips))
 	for _, ip := range ips {
 		// To4() returns nil if IP address is not IPv4
 		if ipv4 := ip.To4(); ipv4 != nil {
-			ipv4s = append(ipv4s, *(*IPv4)(ipv4))
+			ipv4s = append(ipv4s, *(*dns.IPv4)(ipv4))
 		} else {
-			ipv6s = append(ipv6s, *(*IPv6)(ip))
+			ipv6s = append(ipv6s, *(*dns.IPv6)(ip))
 		}
 	}
 
@@ -43,9 +45,9 @@ func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*ResourceRec
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get MX for the host (%s): %w", host, err)
 	}
-	mxs := make([]MX, len(resolvedMXs))
+	mxs := make([]dns.MX, len(resolvedMXs))
 	for i, mx := range resolvedMXs {
-		mxs[i] = MX{
+		mxs[i] = dns.MX{
 			Host: mx.Host,
 			Pref: mx.Pref,
 		}
@@ -55,18 +57,18 @@ func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*ResourceRec
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get NS for the host (%s): %w", host, err)
 	}
-	nss := make([]NS, len(resolvedNSs))
+	nss := make([]dns.NS, len(resolvedNSs))
 	for i, ns := range resolvedNSs {
-		nss[i] = NS{Host: ns.Host}
+		nss[i] = dns.NS{Host: ns.Host}
 	}
 
 	_, resolvedSRVs, err := c.resolver.LookupSRV(ctx, "", "", host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get SRV for the host (%s): %w", host, err)
 	}
-	srvs := make([]SRV, len(resolvedSRVs))
+	srvs := make([]dns.SRV, len(resolvedSRVs))
 	for i, srv := range resolvedSRVs {
-		srvs[i] = SRV{
+		srvs[i] = dns.SRV{
 			Target:   srv.Target,
 			Port:     srv.Port,
 			Priority: srv.Priority,
@@ -78,12 +80,12 @@ func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*ResourceRec
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get TXT for the host (%s): %w", host, err)
 	}
-	txts := make([]TXT, len(resolvedTXTs))
+	txts := make([]dns.TXT, len(resolvedTXTs))
 	for i, txt := range resolvedTXTs {
-		txts[i] = TXT(txt)
+		txts[i] = dns.TXT(txt)
 	}
 
-	return &ResourceRecords{
+	return &dns.ResourceRecords{
 		A:     ipv4s,
 		AAAA:  ipv6s,
 		CNAME: cname,

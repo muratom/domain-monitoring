@@ -1,11 +1,9 @@
-package serverprovider
+package whois
 
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/whois"
 	"github.com/zonedb/zonedb"
 )
 
@@ -15,13 +13,10 @@ func NewZoneDBServerProvider() *ZoneDBServerProvider {
 	return &ZoneDBServerProvider{}
 }
 
-func (p *ZoneDBServerProvider) GetServerByFQDN(fqdn string) (string, error) {
-	if !strings.Contains(fqdn, ".") {
-		return whois.DefaultWhoisServer, nil
-	}
-	z := zonedb.PublicZone(fqdn)
+func (p *ZoneDBServerProvider) GetServerByDomain(domain string) (string, error) {
+	z := zonedb.PublicZone(domain)
 	if z == nil {
-		return "", fmt.Errorf("failed to get a public DNS zone for %s", fqdn)
+		return "", fmt.Errorf("failed to get a public DNS zone for the domain (%s)", domain)
 	}
 
 	// Try whois URL first (these are relatively rare)
@@ -39,5 +34,5 @@ func (p *ZoneDBServerProvider) GetServerByFQDN(fqdn string) (string, error) {
 		return whoisServer, nil
 	}
 
-	return "", fmt.Errorf("no WHOIS server found for %s", fqdn)
+	return "", fmt.Errorf("no WHOIS server found for %s", domain)
 }

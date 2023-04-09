@@ -5,5 +5,5 @@ const (
 )
 
 type ServerProvider interface {
-	GetServerByFQDN(fqdn string) (string, error)
+	GetServerByDomain(domain string) (string, error)
 }

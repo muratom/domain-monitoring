@@ -98,7 +98,10 @@ func (a *Adapter) ParseResponse(ctx context.Context, resp *whoismodel.Response) 
 	}
 
 	return &whoismodel.Record{
-		DomainName: ruResponse.domain,
+		DomainName:  ruResponse.domain,
+		NameServers: ruResponse.nserver,
+		Created:     ruResponse.created,
+		PaidTill:    ruResponse.paidTill,
 	}, nil
 }
 

@@ -19,126 +19,126 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	EmitterService_GetDNS_FullMethodName   = "/emitter.EmitterService/GetDNS"
-	EmitterService_GetWhois_FullMethodName = "/emitter.EmitterService/GetWhois"
+	Emitter_GetDNS_FullMethodName   = "/emitter.Emitter/GetDNS"
+	Emitter_GetWhois_FullMethodName = "/emitter.Emitter/GetWhois"
 )
 
-// EmitterServiceClient is the client API for EmitterService service.
+// EmitterClient is the client API for Emitter service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type EmitterServiceClient interface {
+type EmitterClient interface {
 	GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*ResourceRecords, error)
 	GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*WhoisRecord, error)
 }
 
-type emitterServiceClient struct {
+type emitterClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewEmitterServiceClient(cc grpc.ClientConnInterface) EmitterServiceClient {
-	return &emitterServiceClient{cc}
+func NewEmitterClient(cc grpc.ClientConnInterface) EmitterClient {
+	return &emitterClient{cc}
 }
 
-func (c *emitterServiceClient) GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*ResourceRecords, error) {
+func (c *emitterClient) GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*ResourceRecords, error) {
 	out := new(ResourceRecords)
-	err := c.cc.Invoke(ctx, EmitterService_GetDNS_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Emitter_GetDNS_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *emitterServiceClient) GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*WhoisRecord, error) {
+func (c *emitterClient) GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*WhoisRecord, error) {
 	out := new(WhoisRecord)
-	err := c.cc.Invoke(ctx, EmitterService_GetWhois_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Emitter_GetWhois_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// EmitterServiceServer is the server API for EmitterService service.
-// All implementations must embed UnimplementedEmitterServiceServer
+// EmitterServer is the server API for Emitter service.
+// All implementations must embed UnimplementedEmitterServer
 // for forward compatibility
-type EmitterServiceServer interface {
+type EmitterServer interface {
 	GetDNS(context.Context, *GetDNSRequest) (*ResourceRecords, error)
 	GetWhois(context.Context, *GetWhoisRequest) (*WhoisRecord, error)
-	mustEmbedUnimplementedEmitterServiceServer()
+	mustEmbedUnimplementedEmitterServer()
 }
 
-// UnimplementedEmitterServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedEmitterServiceServer struct {
+// UnimplementedEmitterServer must be embedded to have forward compatible implementations.
+type UnimplementedEmitterServer struct {
 }
 
-func (UnimplementedEmitterServiceServer) GetDNS(context.Context, *GetDNSRequest) (*ResourceRecords, error) {
+func (UnimplementedEmitterServer) GetDNS(context.Context, *GetDNSRequest) (*ResourceRecords, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDNS not implemented")
 }
-func (UnimplementedEmitterServiceServer) GetWhois(context.Context, *GetWhoisRequest) (*WhoisRecord, error) {
+func (UnimplementedEmitterServer) GetWhois(context.Context, *GetWhoisRequest) (*WhoisRecord, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWhois not implemented")
 }
-func (UnimplementedEmitterServiceServer) mustEmbedUnimplementedEmitterServiceServer() {}
+func (UnimplementedEmitterServer) mustEmbedUnimplementedEmitterServer() {}
 
-// UnsafeEmitterServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to EmitterServiceServer will
+// UnsafeEmitterServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to EmitterServer will
 // result in compilation errors.
-type UnsafeEmitterServiceServer interface {
-	mustEmbedUnimplementedEmitterServiceServer()
+type UnsafeEmitterServer interface {
+	mustEmbedUnimplementedEmitterServer()
 }
 
-func RegisterEmitterServiceServer(s grpc.ServiceRegistrar, srv EmitterServiceServer) {
-	s.RegisterService(&EmitterService_ServiceDesc, srv)
+func RegisterEmitterServer(s grpc.ServiceRegistrar, srv EmitterServer) {
+	s.RegisterService(&Emitter_ServiceDesc, srv)
 }
 
-func _EmitterService_GetDNS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Emitter_GetDNS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDNSRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EmitterServiceServer).GetDNS(ctx, in)
+		return srv.(EmitterServer).GetDNS(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EmitterService_GetDNS_FullMethodName,
+		FullMethod: Emitter_GetDNS_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EmitterServiceServer).GetDNS(ctx, req.(*GetDNSRequest))
+		return srv.(EmitterServer).GetDNS(ctx, req.(*GetDNSRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EmitterService_GetWhois_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Emitter_GetWhois_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetWhoisRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EmitterServiceServer).GetWhois(ctx, in)
+		return srv.(EmitterServer).GetWhois(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EmitterService_GetWhois_FullMethodName,
+		FullMethod: Emitter_GetWhois_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EmitterServiceServer).GetWhois(ctx, req.(*GetWhoisRequest))
+		return srv.(EmitterServer).GetWhois(ctx, req.(*GetWhoisRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// EmitterService_ServiceDesc is the grpc.ServiceDesc for EmitterService service.
+// Emitter_ServiceDesc is the grpc.ServiceDesc for Emitter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var EmitterService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "emitter.EmitterService",
-	HandlerType: (*EmitterServiceServer)(nil),
+var Emitter_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "emitter.Emitter",
+	HandlerType: (*EmitterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetDNS",
-			Handler:    _EmitterService_GetDNS_Handler,
+			Handler:    _Emitter_GetDNS_Handler,
 		},
 		{
 			MethodName: "GetWhois",
-			Handler:    _EmitterService_GetWhois_Handler,
+			Handler:    _Emitter_GetWhois_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

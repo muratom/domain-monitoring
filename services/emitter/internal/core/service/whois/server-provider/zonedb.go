@@ -1,4 +1,4 @@
-package whois
+package serverprovider
 
 import (
 	"fmt"

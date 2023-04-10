@@ -13,7 +13,7 @@ message GetDNSRequest {
 
 message MX {
     string host = 1;
-    uint64 pref = 2;
+    uint32 pref = 2;
 }
 
 message NS {
@@ -22,19 +22,19 @@ message NS {
 
 message SRV {
     string target = 1;
-    uint64 port = 2;
-    uint64 priority = 3;
-    uint64 weight = 4;
+    uint32 port = 2;
+    uint32 priority = 3;
+    uint32 weight = 4;
 }
 
 message ResourceRecords {
-    repeated string a = 1;
-    repeated string aaaa = 2;
-    string cname = 3;
-    repeated MX mx = 4;
-    repeated NS ns = 5;
-    repeated SRV srv = 6;
-    repeated string txt = 7;
+    repeated string A = 1;
+    repeated string AAAA = 2;
+    string CNAME = 3;
+    repeated MX MX = 4;
+    repeated NS NS = 5;
+    repeated SRV SRV = 6;
+    repeated string TXT = 7;
 }
 
 message GetWhoisRequest {
@@ -48,7 +48,7 @@ message WhoisRecord {
     google.protobuf.Timestamp paid_till = 4;
 }
 
-service EmitterService {
+service Emitter {
     rpc GetDNS(GetDNSRequest) returns (ResourceRecords) {
         option (google.api.http) = {
             get: "/v1/dns"

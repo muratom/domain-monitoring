@@ -57,44 +57,52 @@ paths:
 
 components:
   schemas:
-    uint:
-      type: integer
-      format: int64
-      minimum: 0
-    IPv4:
-      type: string
-      format: ipv4
-    IPv6:
-      type: string
-      format: ipv6
     MX:
       type: object
+      required:
+        - host
+        - pref
       properties:
         host:
           type: string
         pref:
           description: Host preference
-          $ref: "#/components/schemas/uint"
+          type: integer
+          format: int64
+          minimum: 0
     NS:
       type: object
+      required:
+        - host
       properties:
         host:
           type: string
     SRV:
       type: object
+      required:
+        - target
+        - port
+        - priority
+        - weight
       properties:
         target:
           description: канонические имя машины, предоставляющей сервис
           type: string
         port:
           description: порт TCP или UDP, на котором работает сервис
-          $ref: "#/components/schemas/uint"
+          type: integer
+          format: int64
+          minimum: 0
         priority:
           description: приоритет целевого хоста, более низкое значение означает более предпочтительный
-          $ref: "#/components/schemas/uint"
+          type: integer
+          format: int64
+          minimum: 0
         weight:
           description: относительный вес для записей c одинаковым приоритетом
-          $ref: "#/components/schemas/uint"
+          type: integer
+          format: int64
+          minimum: 0
     TXT:
       type: string
 
@@ -106,11 +114,13 @@ components:
         A:
           type: array
           items:
-            $ref: "#/components/schemas/IPv4"
+            type: string
+            format: ipv4
         AAAA:
           type: array
           items:
-            $ref: "#/components/schemas/IPv6"
+            type: string
+            format: ipv6
         CNAME:
           type: string
         MX:

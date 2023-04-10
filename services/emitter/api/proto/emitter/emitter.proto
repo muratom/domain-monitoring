@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package emitter;
+
+option go_package = "github.com/muratom/domain-monitoring/services/emitter/delivery/grpc/emitter";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+message GetDNSRequest {
+    string fqdn = 1;
+}
+
+message MX {
+    string host = 1;
+    uint64 pref = 2;
+}
+
+message NS {
+    string host = 1;
+}
+
+message SRV {
+    string target = 1;
+    uint64 port = 2;
+    uint64 priority = 3;
+    uint64 weight = 4;
+}
+
+message ResourceRecords {
+    repeated string a = 1;
+    repeated string aaaa = 2;
+    string cname = 3;
+    repeated MX mx = 4;
+    repeated NS ns = 5;
+    repeated SRV srv = 6;
+    repeated string txt = 7;
+}
+
+message GetWhoisRequest {
+    string fqdn = 1;
+}
+
+message WhoisRecord {
+    string domain_name = 1;
+    repeated string name_servers = 2;
+    google.protobuf.Timestamp created = 3;
+    google.protobuf.Timestamp paid_till = 4;
+}
+
+service EmitterService {
+    rpc GetDNS(GetDNSRequest) returns (ResourceRecords) {
+        option (google.api.http) = {
+            get: "/v1/dns"
+        };
+    }
+    rpc GetWhois(GetWhoisRequest) returns (WhoisRecord) {
+        option (google.api.http) = {
+            get: "/v1/whois"
+        };
+    }
+}

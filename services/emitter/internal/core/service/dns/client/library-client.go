@@ -25,14 +25,14 @@ func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*dns.Resourc
 		return nil, fmt.Errorf("failed to get IP addresses for the host (%s): %w", host, err)
 	}
 
-	ipv4s := make([]dns.IPv4, 0, len(ips))
-	ipv6s := make([]dns.IPv6, 0, len(ips))
+	ipv4s := make([]string, 0, len(ips))
+	ipv6s := make([]string, 0, len(ips))
 	for _, ip := range ips {
 		// To4() returns nil if IP address is not IPv4
 		if ipv4 := ip.To4(); ipv4 != nil {
-			ipv4s = append(ipv4s, *(*dns.IPv4)(ipv4))
+			ipv4s = append(ipv4s, ip.String())
 		} else {
-			ipv6s = append(ipv6s, *(*dns.IPv6)(ip))
+			ipv6s = append(ipv6s, ip.String())
 		}
 	}
 

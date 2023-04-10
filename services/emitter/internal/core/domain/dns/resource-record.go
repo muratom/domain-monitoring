@@ -1,10 +1,5 @@
 package dns
 
-type IPv4 [4]byte
-type IPv6 [16]byte
-
-type CNAME string
-
 type MX struct {
 	Host string
 	Pref uint16
@@ -24,8 +19,8 @@ type SRV struct {
 type TXT string
 
 type ResourceRecords struct {
-	A     []IPv4
-	AAAA  []IPv6
+	A     []string
+	AAAA  []string
 	CNAME string
 	MX    []MX
 	NS    []NS

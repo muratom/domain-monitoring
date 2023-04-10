@@ -55,7 +55,7 @@ func (s *LibraryClientTestSuite) TestAllResourceRecords() {
 	dnsClient := NewLibraryClient(s.netResolver)
 	rr, err := dnsClient.LookupRR(context.Background(), "www.example.com")
 	s.Require().NoError(err)
-	s.Require().ElementsMatch([]dns.IPv4{{1, 2, 3, 4}, {42, 73, 7, 2}}, rr.A)
+	s.Require().ElementsMatch([]string{"1.2.3.4", "42.73.7.2"}, rr.A)
 	s.Require().Equal("example.com.", rr.CNAME)
 	s.Require().ElementsMatch([]dns.MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
 	s.Require().ElementsMatch([]dns.TXT{"abracadabra"}, rr.TXT)

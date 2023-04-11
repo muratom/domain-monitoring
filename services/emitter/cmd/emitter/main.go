@@ -13,7 +13,7 @@ import (
 	dnsclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns/client"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
 	adapterprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter-provider"
-	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/client"
+	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/client"
 	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/server-provider"
 	server "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc"
 	"google.golang.org/grpc"

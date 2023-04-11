@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package emitter;
 
-option go_package = "github.com/muratom/domain-monitoring/services/emitter/delivery/grpc/emitter";
+option go_package = "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter";
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";

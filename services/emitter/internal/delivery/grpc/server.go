@@ -1,11 +1,11 @@
-package server
+package grpc
 
 import (
 	"context"
 	"fmt"
 
+	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
-	pb "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc/emitter"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

@@ -5,14 +5,15 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns/client"
+	dnsclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns/client"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
 	adapterprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter-provider"
+	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/client"
 	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/server-provider"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc/emitter"
 	pb "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc/emitter"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc/emitter/server"
 	"google.golang.org/grpc"
@@ -26,10 +27,22 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	dnsService := dns.NewService(client.NewLibraryClient(net.DefaultResolver))
-	whoisService := whois.NewService(adapterprovider.NewHardcodeAdapterProvider(serverprovider.NewZoneDBServerProvider()))
+	dnsResolver := &net.Resolver{
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			dialer := net.Dialer{
+				// TODO: set timeout by config
+				Timeout: 1 * time.Second,
+			}
+			return dialer.DialContext(ctx, network, address)
+		},
+	}
+	dnsService := dns.NewService(dnsclient.NewLibraryClient(dnsResolver))
+
+	// TODO: set timeout by config
+	whoisClient := whoisclient.NewWhoisClient(1 * time.Second)
+	whoisService := whois.NewService(adapterprovider.NewHardcodeAdapterProvider(whoisClient, serverprovider.NewZoneDBServerProvider()))
 	emitterServer := server.NewEmitterServer(dnsService, whoisService)
-	emitter.RegisterEmitterServer(grpcServer, emitterServer)
+	pb.RegisterEmitterServer(grpcServer, emitterServer)
 
 	log.Printf("Serving gRPC on http://0.0.0.0:8080")
 	go func() {

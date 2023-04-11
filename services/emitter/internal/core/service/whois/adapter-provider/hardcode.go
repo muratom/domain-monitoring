@@ -2,10 +2,8 @@ package adapterprovider
 
 import (
 	"strings"
-	"time"
 
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
-	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/client"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/ru"
 )
 
@@ -13,9 +11,9 @@ type HardcodeAdapterProvider struct {
 	adapterByDomain map[string]whois.Adapter
 }
 
-func NewHardcodeAdapterProvider(whoisServerProvider whois.ServerProvider) *HardcodeAdapterProvider {
+func NewHardcodeAdapterProvider(whoisClient whois.Client, whoisServerProvider whois.ServerProvider) *HardcodeAdapterProvider {
 	ruAdapter := ru.NewAdapter(
-		whoisclient.NewWhoisClient(1*time.Minute),
+		whoisClient,
 		whoisServerProvider,
 	)
 	adapterByDomain := map[string]whois.Adapter{

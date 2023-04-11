@@ -6,6 +6,7 @@ import (
 
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	pb "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc/emitter"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type EmitterServer struct {
@@ -27,7 +28,7 @@ func NewEmitterServer(dnsService dnsService, whoisService whoisService) *Emitter
 func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.ResourceRecords, error) {
 	resourceRecords, err := e.dnsService.LookupResourceRecords(ctx, req.GetFqdn())
 	if err != nil {
-		return nil, fmt.Errorf("failed to lookup resource records: %w", err)
+		return nil, fmt.Errorf("failed to lookup resource records for FQDN (%v): %w", req.GetFqdn(), err)
 	}
 
 	return buildResourceRecordsResponse(ctx, resourceRecords), nil
@@ -80,6 +81,16 @@ func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dns.Reso
 	}
 }
 
-func (e *EmitterServer) GetWhois(_ context.Context, _ *pb.GetWhoisRequest) (*pb.WhoisRecord, error) {
-	panic("not implemented") // TODO: Implement
+func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (*pb.WhoisRecord, error) {
+	whoisRecord, err := e.whoisService.FetchWhois(ctx, req.GetFqdn())
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch WHOIS for FQDN (%v): %w", req.GetFqdn(), err)
+	}
+
+	return &pb.WhoisRecord{
+		DomainName:  whoisRecord.DomainName,
+		NameServers: whoisRecord.NameServers,
+		Created:     timestamppb.New(whoisRecord.Created),
+		PaidTill:    timestamppb.New(whoisRecord.PaidTill),
+	}, nil
 }

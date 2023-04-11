@@ -8,12 +8,11 @@ import (
 
 	whoismodel "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/whois"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter"
 )
 
 // https://tcinet.ru/documents/whois_ru_rf.pdf
 type Adapter struct {
-	whoisClient adapter.Client
+	whoisClient whois.Client
 	whoisServer string
 }
 
@@ -62,7 +61,7 @@ type Response struct {
 	paidTill time.Time
 }
 
-func NewAdapter(whoisClient adapter.Client, whoisProvider whois.ServerProvider) *Adapter {
+func NewAdapter(whoisClient whois.Client, whoisProvider whois.ServerProvider) *Adapter {
 	server, err := whoisProvider.GetServerByDomain("ru")
 	if err != nil {
 		return nil

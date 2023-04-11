@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/whois"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
 )
 
 type DialClient struct {

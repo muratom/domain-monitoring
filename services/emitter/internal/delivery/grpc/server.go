@@ -35,14 +35,6 @@ func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.
 }
 
 func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dns.ResourceRecords) *pb.ResourceRecords {
-	a := make([]string, len(resourceRecords.A))
-	for i, ip4 := range resourceRecords.A {
-		a[i] = string(ip4[:])
-	}
-	aaaa := make([]string, len(resourceRecords.AAAA))
-	for i, ip6 := range resourceRecords.AAAA {
-		aaaa[i] = string(ip6[:])
-	}
 	mx := make([]*pb.MX, len(resourceRecords.MX))
 	for i, m := range resourceRecords.MX {
 		mx[i] = &pb.MX{
@@ -71,8 +63,8 @@ func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dns.Reso
 	}
 
 	return &pb.ResourceRecords{
-		A:     a,
-		AAAA:  aaaa,
+		A:     resourceRecords.A,
+		AAAA:  resourceRecords.AAAA,
 		CNAME: resourceRecords.CNAME,
 		MX:    mx,
 		NS:    ns,

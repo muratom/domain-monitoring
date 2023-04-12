@@ -1,0 +1,11 @@
+output = "models"
+no-tests = true
+debug = true
+
+[psql]
+  dbname = "domain"
+  host   = "localhost"
+  port   = 5432
+  user   = "user"
+  pass   = "root"
+  sslmode = "disable"

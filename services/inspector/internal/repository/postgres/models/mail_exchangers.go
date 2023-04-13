@@ -109,8 +109,6 @@ type (
 	// MailExchangerSlice is an alias for a slice of pointers to MailExchanger.
 	// This should almost always be used instead of []MailExchanger.
 	MailExchangerSlice []*MailExchanger
-	// MailExchangerHook is the signature for custom MailExchanger hook methods
-	MailExchangerHook func(context.Context, boil.ContextExecutor, *MailExchanger) error
 
 	mailExchangerQuery struct {
 		*queries.Query
@@ -138,179 +136,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var mailExchangerAfterSelectHooks []MailExchangerHook
-
-var mailExchangerBeforeInsertHooks []MailExchangerHook
-var mailExchangerAfterInsertHooks []MailExchangerHook
-
-var mailExchangerBeforeUpdateHooks []MailExchangerHook
-var mailExchangerAfterUpdateHooks []MailExchangerHook
-
-var mailExchangerBeforeDeleteHooks []MailExchangerHook
-var mailExchangerAfterDeleteHooks []MailExchangerHook
-
-var mailExchangerBeforeUpsertHooks []MailExchangerHook
-var mailExchangerAfterUpsertHooks []MailExchangerHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *MailExchanger) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *MailExchanger) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *MailExchanger) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *MailExchanger) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *MailExchanger) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *MailExchanger) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *MailExchanger) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *MailExchanger) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *MailExchanger) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range mailExchangerAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddMailExchangerHook registers your hook function for all future operations.
-func AddMailExchangerHook(hookPoint boil.HookPoint, mailExchangerHook MailExchangerHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		mailExchangerAfterSelectHooks = append(mailExchangerAfterSelectHooks, mailExchangerHook)
-	case boil.BeforeInsertHook:
-		mailExchangerBeforeInsertHooks = append(mailExchangerBeforeInsertHooks, mailExchangerHook)
-	case boil.AfterInsertHook:
-		mailExchangerAfterInsertHooks = append(mailExchangerAfterInsertHooks, mailExchangerHook)
-	case boil.BeforeUpdateHook:
-		mailExchangerBeforeUpdateHooks = append(mailExchangerBeforeUpdateHooks, mailExchangerHook)
-	case boil.AfterUpdateHook:
-		mailExchangerAfterUpdateHooks = append(mailExchangerAfterUpdateHooks, mailExchangerHook)
-	case boil.BeforeDeleteHook:
-		mailExchangerBeforeDeleteHooks = append(mailExchangerBeforeDeleteHooks, mailExchangerHook)
-	case boil.AfterDeleteHook:
-		mailExchangerAfterDeleteHooks = append(mailExchangerAfterDeleteHooks, mailExchangerHook)
-	case boil.BeforeUpsertHook:
-		mailExchangerBeforeUpsertHooks = append(mailExchangerBeforeUpsertHooks, mailExchangerHook)
-	case boil.AfterUpsertHook:
-		mailExchangerAfterUpsertHooks = append(mailExchangerAfterUpsertHooks, mailExchangerHook)
-	}
-}
-
 // One returns a single mailExchanger record from the query.
 func (q mailExchangerQuery) One(ctx context.Context, exec boil.ContextExecutor) (*MailExchanger, error) {
 	o := &MailExchanger{}
@@ -325,10 +150,6 @@ func (q mailExchangerQuery) One(ctx context.Context, exec boil.ContextExecutor) 
 		return nil, errors.Wrap(err, "models: failed to execute a one query for mail_exchangers")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -339,14 +160,6 @@ func (q mailExchangerQuery) All(ctx context.Context, exec boil.ContextExecutor) 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to MailExchanger slice")
-	}
-
-	if len(mailExchangerAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -476,14 +289,6 @@ func (mailExchangerL) LoadDomain(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -595,10 +400,6 @@ func FindMailExchanger(ctx context.Context, exec boil.ContextExecutor, iD int, s
 		return nil, errors.Wrap(err, "models: unable to select from mail_exchangers")
 	}
 
-	if err = mailExchangerObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return mailExchangerObj, err
-	}
-
 	return mailExchangerObj, nil
 }
 
@@ -610,10 +411,6 @@ func (o *MailExchanger) Insert(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(mailExchangerColumnsWithDefault, o)
 
@@ -679,7 +476,7 @@ func (o *MailExchanger) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		mailExchangerInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the MailExchanger.
@@ -687,9 +484,6 @@ func (o *MailExchanger) Insert(ctx context.Context, exec boil.ContextExecutor, c
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *MailExchanger) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	mailExchangerUpdateCacheMut.RLock()
 	cache, cached := mailExchangerUpdateCache[key]
@@ -743,7 +537,7 @@ func (o *MailExchanger) Update(ctx context.Context, exec boil.ContextExecutor, c
 		mailExchangerUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -816,10 +610,6 @@ func (o MailExchangerSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 func (o *MailExchanger) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no mail_exchangers provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(mailExchangerColumnsWithDefault, o)
@@ -927,7 +717,7 @@ func (o *MailExchanger) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 		mailExchangerUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single MailExchanger record with an executor.
@@ -935,10 +725,6 @@ func (o *MailExchanger) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 func (o *MailExchanger) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no MailExchanger provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), mailExchangerPrimaryKeyMapping)
@@ -957,10 +743,6 @@ func (o *MailExchanger) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for mail_exchangers")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -993,14 +775,6 @@ func (o MailExchangerSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 		return 0, nil
 	}
 
-	if len(mailExchangerBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), mailExchangerPrimaryKeyMapping)
@@ -1023,14 +797,6 @@ func (o MailExchangerSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for mail_exchangers")
-	}
-
-	if len(mailExchangerAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

@@ -148,8 +148,6 @@ type (
 	// CanonicalNameSlice is an alias for a slice of pointers to CanonicalName.
 	// This should almost always be used instead of []CanonicalName.
 	CanonicalNameSlice []*CanonicalName
-	// CanonicalNameHook is the signature for custom CanonicalName hook methods
-	CanonicalNameHook func(context.Context, boil.ContextExecutor, *CanonicalName) error
 
 	canonicalNameQuery struct {
 		*queries.Query
@@ -177,179 +175,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var canonicalNameAfterSelectHooks []CanonicalNameHook
-
-var canonicalNameBeforeInsertHooks []CanonicalNameHook
-var canonicalNameAfterInsertHooks []CanonicalNameHook
-
-var canonicalNameBeforeUpdateHooks []CanonicalNameHook
-var canonicalNameAfterUpdateHooks []CanonicalNameHook
-
-var canonicalNameBeforeDeleteHooks []CanonicalNameHook
-var canonicalNameAfterDeleteHooks []CanonicalNameHook
-
-var canonicalNameBeforeUpsertHooks []CanonicalNameHook
-var canonicalNameAfterUpsertHooks []CanonicalNameHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *CanonicalName) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *CanonicalName) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *CanonicalName) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *CanonicalName) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *CanonicalName) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *CanonicalName) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *CanonicalName) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *CanonicalName) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *CanonicalName) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range canonicalNameAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddCanonicalNameHook registers your hook function for all future operations.
-func AddCanonicalNameHook(hookPoint boil.HookPoint, canonicalNameHook CanonicalNameHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		canonicalNameAfterSelectHooks = append(canonicalNameAfterSelectHooks, canonicalNameHook)
-	case boil.BeforeInsertHook:
-		canonicalNameBeforeInsertHooks = append(canonicalNameBeforeInsertHooks, canonicalNameHook)
-	case boil.AfterInsertHook:
-		canonicalNameAfterInsertHooks = append(canonicalNameAfterInsertHooks, canonicalNameHook)
-	case boil.BeforeUpdateHook:
-		canonicalNameBeforeUpdateHooks = append(canonicalNameBeforeUpdateHooks, canonicalNameHook)
-	case boil.AfterUpdateHook:
-		canonicalNameAfterUpdateHooks = append(canonicalNameAfterUpdateHooks, canonicalNameHook)
-	case boil.BeforeDeleteHook:
-		canonicalNameBeforeDeleteHooks = append(canonicalNameBeforeDeleteHooks, canonicalNameHook)
-	case boil.AfterDeleteHook:
-		canonicalNameAfterDeleteHooks = append(canonicalNameAfterDeleteHooks, canonicalNameHook)
-	case boil.BeforeUpsertHook:
-		canonicalNameBeforeUpsertHooks = append(canonicalNameBeforeUpsertHooks, canonicalNameHook)
-	case boil.AfterUpsertHook:
-		canonicalNameAfterUpsertHooks = append(canonicalNameAfterUpsertHooks, canonicalNameHook)
-	}
-}
-
 // One returns a single canonicalName record from the query.
 func (q canonicalNameQuery) One(ctx context.Context, exec boil.ContextExecutor) (*CanonicalName, error) {
 	o := &CanonicalName{}
@@ -364,10 +189,6 @@ func (q canonicalNameQuery) One(ctx context.Context, exec boil.ContextExecutor) 
 		return nil, errors.Wrap(err, "models: failed to execute a one query for canonical_names")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -378,14 +199,6 @@ func (q canonicalNameQuery) All(ctx context.Context, exec boil.ContextExecutor) 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to CanonicalName slice")
-	}
-
-	if len(canonicalNameAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -515,14 +328,6 @@ func (canonicalNameL) LoadDomain(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -634,10 +439,6 @@ func FindCanonicalName(ctx context.Context, exec boil.ContextExecutor, iD int, s
 		return nil, errors.Wrap(err, "models: unable to select from canonical_names")
 	}
 
-	if err = canonicalNameObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return canonicalNameObj, err
-	}
-
 	return canonicalNameObj, nil
 }
 
@@ -649,10 +450,6 @@ func (o *CanonicalName) Insert(ctx context.Context, exec boil.ContextExecutor, c
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(canonicalNameColumnsWithDefault, o)
 
@@ -718,7 +515,7 @@ func (o *CanonicalName) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		canonicalNameInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the CanonicalName.
@@ -726,9 +523,6 @@ func (o *CanonicalName) Insert(ctx context.Context, exec boil.ContextExecutor, c
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *CanonicalName) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	canonicalNameUpdateCacheMut.RLock()
 	cache, cached := canonicalNameUpdateCache[key]
@@ -782,7 +576,7 @@ func (o *CanonicalName) Update(ctx context.Context, exec boil.ContextExecutor, c
 		canonicalNameUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -855,10 +649,6 @@ func (o CanonicalNameSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 func (o *CanonicalName) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no canonical_names provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(canonicalNameColumnsWithDefault, o)
@@ -966,7 +756,7 @@ func (o *CanonicalName) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 		canonicalNameUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single CanonicalName record with an executor.
@@ -974,10 +764,6 @@ func (o *CanonicalName) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 func (o *CanonicalName) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no CanonicalName provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), canonicalNamePrimaryKeyMapping)
@@ -996,10 +782,6 @@ func (o *CanonicalName) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for canonical_names")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -1032,14 +814,6 @@ func (o CanonicalNameSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 		return 0, nil
 	}
 
-	if len(canonicalNameBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), canonicalNamePrimaryKeyMapping)
@@ -1062,14 +836,6 @@ func (o CanonicalNameSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for canonical_names")
-	}
-
-	if len(canonicalNameAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

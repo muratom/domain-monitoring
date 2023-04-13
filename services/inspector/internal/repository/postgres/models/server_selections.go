@@ -123,8 +123,6 @@ type (
 	// ServerSelectionSlice is an alias for a slice of pointers to ServerSelection.
 	// This should almost always be used instead of []ServerSelection.
 	ServerSelectionSlice []*ServerSelection
-	// ServerSelectionHook is the signature for custom ServerSelection hook methods
-	ServerSelectionHook func(context.Context, boil.ContextExecutor, *ServerSelection) error
 
 	serverSelectionQuery struct {
 		*queries.Query
@@ -152,179 +150,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var serverSelectionAfterSelectHooks []ServerSelectionHook
-
-var serverSelectionBeforeInsertHooks []ServerSelectionHook
-var serverSelectionAfterInsertHooks []ServerSelectionHook
-
-var serverSelectionBeforeUpdateHooks []ServerSelectionHook
-var serverSelectionAfterUpdateHooks []ServerSelectionHook
-
-var serverSelectionBeforeDeleteHooks []ServerSelectionHook
-var serverSelectionAfterDeleteHooks []ServerSelectionHook
-
-var serverSelectionBeforeUpsertHooks []ServerSelectionHook
-var serverSelectionAfterUpsertHooks []ServerSelectionHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *ServerSelection) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *ServerSelection) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *ServerSelection) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *ServerSelection) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *ServerSelection) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *ServerSelection) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *ServerSelection) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *ServerSelection) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *ServerSelection) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range serverSelectionAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddServerSelectionHook registers your hook function for all future operations.
-func AddServerSelectionHook(hookPoint boil.HookPoint, serverSelectionHook ServerSelectionHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		serverSelectionAfterSelectHooks = append(serverSelectionAfterSelectHooks, serverSelectionHook)
-	case boil.BeforeInsertHook:
-		serverSelectionBeforeInsertHooks = append(serverSelectionBeforeInsertHooks, serverSelectionHook)
-	case boil.AfterInsertHook:
-		serverSelectionAfterInsertHooks = append(serverSelectionAfterInsertHooks, serverSelectionHook)
-	case boil.BeforeUpdateHook:
-		serverSelectionBeforeUpdateHooks = append(serverSelectionBeforeUpdateHooks, serverSelectionHook)
-	case boil.AfterUpdateHook:
-		serverSelectionAfterUpdateHooks = append(serverSelectionAfterUpdateHooks, serverSelectionHook)
-	case boil.BeforeDeleteHook:
-		serverSelectionBeforeDeleteHooks = append(serverSelectionBeforeDeleteHooks, serverSelectionHook)
-	case boil.AfterDeleteHook:
-		serverSelectionAfterDeleteHooks = append(serverSelectionAfterDeleteHooks, serverSelectionHook)
-	case boil.BeforeUpsertHook:
-		serverSelectionBeforeUpsertHooks = append(serverSelectionBeforeUpsertHooks, serverSelectionHook)
-	case boil.AfterUpsertHook:
-		serverSelectionAfterUpsertHooks = append(serverSelectionAfterUpsertHooks, serverSelectionHook)
-	}
-}
-
 // One returns a single serverSelection record from the query.
 func (q serverSelectionQuery) One(ctx context.Context, exec boil.ContextExecutor) (*ServerSelection, error) {
 	o := &ServerSelection{}
@@ -339,10 +164,6 @@ func (q serverSelectionQuery) One(ctx context.Context, exec boil.ContextExecutor
 		return nil, errors.Wrap(err, "models: failed to execute a one query for server_selections")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -353,14 +174,6 @@ func (q serverSelectionQuery) All(ctx context.Context, exec boil.ContextExecutor
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to ServerSelection slice")
-	}
-
-	if len(serverSelectionAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -490,14 +303,6 @@ func (serverSelectionL) LoadDomain(ctx context.Context, e boil.ContextExecutor, 
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -609,10 +414,6 @@ func FindServerSelection(ctx context.Context, exec boil.ContextExecutor, iD int,
 		return nil, errors.Wrap(err, "models: unable to select from server_selections")
 	}
 
-	if err = serverSelectionObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return serverSelectionObj, err
-	}
-
 	return serverSelectionObj, nil
 }
 
@@ -624,10 +425,6 @@ func (o *ServerSelection) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(serverSelectionColumnsWithDefault, o)
 
@@ -693,7 +490,7 @@ func (o *ServerSelection) Insert(ctx context.Context, exec boil.ContextExecutor,
 		serverSelectionInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the ServerSelection.
@@ -701,9 +498,6 @@ func (o *ServerSelection) Insert(ctx context.Context, exec boil.ContextExecutor,
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *ServerSelection) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	serverSelectionUpdateCacheMut.RLock()
 	cache, cached := serverSelectionUpdateCache[key]
@@ -757,7 +551,7 @@ func (o *ServerSelection) Update(ctx context.Context, exec boil.ContextExecutor,
 		serverSelectionUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -830,10 +624,6 @@ func (o ServerSelectionSlice) UpdateAll(ctx context.Context, exec boil.ContextEx
 func (o *ServerSelection) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no server_selections provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(serverSelectionColumnsWithDefault, o)
@@ -941,7 +731,7 @@ func (o *ServerSelection) Upsert(ctx context.Context, exec boil.ContextExecutor,
 		serverSelectionUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single ServerSelection record with an executor.
@@ -949,10 +739,6 @@ func (o *ServerSelection) Upsert(ctx context.Context, exec boil.ContextExecutor,
 func (o *ServerSelection) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no ServerSelection provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), serverSelectionPrimaryKeyMapping)
@@ -971,10 +757,6 @@ func (o *ServerSelection) Delete(ctx context.Context, exec boil.ContextExecutor)
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for server_selections")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -1007,14 +789,6 @@ func (o ServerSelectionSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 		return 0, nil
 	}
 
-	if len(serverSelectionBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), serverSelectionPrimaryKeyMapping)
@@ -1037,14 +811,6 @@ func (o ServerSelectionSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for server_selections")
-	}
-
-	if len(serverSelectionAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

@@ -102,8 +102,6 @@ type (
 	// NameServerSlice is an alias for a slice of pointers to NameServer.
 	// This should almost always be used instead of []NameServer.
 	NameServerSlice []*NameServer
-	// NameServerHook is the signature for custom NameServer hook methods
-	NameServerHook func(context.Context, boil.ContextExecutor, *NameServer) error
 
 	nameServerQuery struct {
 		*queries.Query
@@ -131,179 +129,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var nameServerAfterSelectHooks []NameServerHook
-
-var nameServerBeforeInsertHooks []NameServerHook
-var nameServerAfterInsertHooks []NameServerHook
-
-var nameServerBeforeUpdateHooks []NameServerHook
-var nameServerAfterUpdateHooks []NameServerHook
-
-var nameServerBeforeDeleteHooks []NameServerHook
-var nameServerAfterDeleteHooks []NameServerHook
-
-var nameServerBeforeUpsertHooks []NameServerHook
-var nameServerAfterUpsertHooks []NameServerHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *NameServer) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *NameServer) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *NameServer) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *NameServer) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *NameServer) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *NameServer) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *NameServer) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *NameServer) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *NameServer) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range nameServerAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddNameServerHook registers your hook function for all future operations.
-func AddNameServerHook(hookPoint boil.HookPoint, nameServerHook NameServerHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		nameServerAfterSelectHooks = append(nameServerAfterSelectHooks, nameServerHook)
-	case boil.BeforeInsertHook:
-		nameServerBeforeInsertHooks = append(nameServerBeforeInsertHooks, nameServerHook)
-	case boil.AfterInsertHook:
-		nameServerAfterInsertHooks = append(nameServerAfterInsertHooks, nameServerHook)
-	case boil.BeforeUpdateHook:
-		nameServerBeforeUpdateHooks = append(nameServerBeforeUpdateHooks, nameServerHook)
-	case boil.AfterUpdateHook:
-		nameServerAfterUpdateHooks = append(nameServerAfterUpdateHooks, nameServerHook)
-	case boil.BeforeDeleteHook:
-		nameServerBeforeDeleteHooks = append(nameServerBeforeDeleteHooks, nameServerHook)
-	case boil.AfterDeleteHook:
-		nameServerAfterDeleteHooks = append(nameServerAfterDeleteHooks, nameServerHook)
-	case boil.BeforeUpsertHook:
-		nameServerBeforeUpsertHooks = append(nameServerBeforeUpsertHooks, nameServerHook)
-	case boil.AfterUpsertHook:
-		nameServerAfterUpsertHooks = append(nameServerAfterUpsertHooks, nameServerHook)
-	}
-}
-
 // One returns a single nameServer record from the query.
 func (q nameServerQuery) One(ctx context.Context, exec boil.ContextExecutor) (*NameServer, error) {
 	o := &NameServer{}
@@ -318,10 +143,6 @@ func (q nameServerQuery) One(ctx context.Context, exec boil.ContextExecutor) (*N
 		return nil, errors.Wrap(err, "models: failed to execute a one query for name_servers")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -332,14 +153,6 @@ func (q nameServerQuery) All(ctx context.Context, exec boil.ContextExecutor) (Na
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to NameServer slice")
-	}
-
-	if len(nameServerAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -469,14 +282,6 @@ func (nameServerL) LoadDomain(ctx context.Context, e boil.ContextExecutor, singu
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -588,10 +393,6 @@ func FindNameServer(ctx context.Context, exec boil.ContextExecutor, iD int, sele
 		return nil, errors.Wrap(err, "models: unable to select from name_servers")
 	}
 
-	if err = nameServerObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return nameServerObj, err
-	}
-
 	return nameServerObj, nil
 }
 
@@ -603,10 +404,6 @@ func (o *NameServer) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(nameServerColumnsWithDefault, o)
 
@@ -672,7 +469,7 @@ func (o *NameServer) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 		nameServerInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the NameServer.
@@ -680,9 +477,6 @@ func (o *NameServer) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *NameServer) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	nameServerUpdateCacheMut.RLock()
 	cache, cached := nameServerUpdateCache[key]
@@ -736,7 +530,7 @@ func (o *NameServer) Update(ctx context.Context, exec boil.ContextExecutor, colu
 		nameServerUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -809,10 +603,6 @@ func (o NameServerSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 func (o *NameServer) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no name_servers provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(nameServerColumnsWithDefault, o)
@@ -920,7 +710,7 @@ func (o *NameServer) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		nameServerUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single NameServer record with an executor.
@@ -928,10 +718,6 @@ func (o *NameServer) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 func (o *NameServer) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no NameServer provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), nameServerPrimaryKeyMapping)
@@ -950,10 +736,6 @@ func (o *NameServer) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for name_servers")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -986,14 +768,6 @@ func (o NameServerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 		return 0, nil
 	}
 
-	if len(nameServerBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), nameServerPrimaryKeyMapping)
@@ -1016,14 +790,6 @@ func (o NameServerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for name_servers")
-	}
-
-	if len(nameServerAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

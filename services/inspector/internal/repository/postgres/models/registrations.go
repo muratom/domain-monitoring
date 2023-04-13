@@ -109,8 +109,6 @@ type (
 	// RegistrationSlice is an alias for a slice of pointers to Registration.
 	// This should almost always be used instead of []Registration.
 	RegistrationSlice []*Registration
-	// RegistrationHook is the signature for custom Registration hook methods
-	RegistrationHook func(context.Context, boil.ContextExecutor, *Registration) error
 
 	registrationQuery struct {
 		*queries.Query
@@ -138,179 +136,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var registrationAfterSelectHooks []RegistrationHook
-
-var registrationBeforeInsertHooks []RegistrationHook
-var registrationAfterInsertHooks []RegistrationHook
-
-var registrationBeforeUpdateHooks []RegistrationHook
-var registrationAfterUpdateHooks []RegistrationHook
-
-var registrationBeforeDeleteHooks []RegistrationHook
-var registrationAfterDeleteHooks []RegistrationHook
-
-var registrationBeforeUpsertHooks []RegistrationHook
-var registrationAfterUpsertHooks []RegistrationHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Registration) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Registration) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Registration) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Registration) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Registration) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Registration) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Registration) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Registration) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Registration) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range registrationAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddRegistrationHook registers your hook function for all future operations.
-func AddRegistrationHook(hookPoint boil.HookPoint, registrationHook RegistrationHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		registrationAfterSelectHooks = append(registrationAfterSelectHooks, registrationHook)
-	case boil.BeforeInsertHook:
-		registrationBeforeInsertHooks = append(registrationBeforeInsertHooks, registrationHook)
-	case boil.AfterInsertHook:
-		registrationAfterInsertHooks = append(registrationAfterInsertHooks, registrationHook)
-	case boil.BeforeUpdateHook:
-		registrationBeforeUpdateHooks = append(registrationBeforeUpdateHooks, registrationHook)
-	case boil.AfterUpdateHook:
-		registrationAfterUpdateHooks = append(registrationAfterUpdateHooks, registrationHook)
-	case boil.BeforeDeleteHook:
-		registrationBeforeDeleteHooks = append(registrationBeforeDeleteHooks, registrationHook)
-	case boil.AfterDeleteHook:
-		registrationAfterDeleteHooks = append(registrationAfterDeleteHooks, registrationHook)
-	case boil.BeforeUpsertHook:
-		registrationBeforeUpsertHooks = append(registrationBeforeUpsertHooks, registrationHook)
-	case boil.AfterUpsertHook:
-		registrationAfterUpsertHooks = append(registrationAfterUpsertHooks, registrationHook)
-	}
-}
-
 // One returns a single registration record from the query.
 func (q registrationQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Registration, error) {
 	o := &Registration{}
@@ -325,10 +150,6 @@ func (q registrationQuery) One(ctx context.Context, exec boil.ContextExecutor) (
 		return nil, errors.Wrap(err, "models: failed to execute a one query for registrations")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -339,14 +160,6 @@ func (q registrationQuery) All(ctx context.Context, exec boil.ContextExecutor) (
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Registration slice")
-	}
-
-	if len(registrationAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -476,14 +289,6 @@ func (registrationL) LoadDomain(ctx context.Context, e boil.ContextExecutor, sin
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -595,10 +400,6 @@ func FindRegistration(ctx context.Context, exec boil.ContextExecutor, iD int, se
 		return nil, errors.Wrap(err, "models: unable to select from registrations")
 	}
 
-	if err = registrationObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return registrationObj, err
-	}
-
 	return registrationObj, nil
 }
 
@@ -610,10 +411,6 @@ func (o *Registration) Insert(ctx context.Context, exec boil.ContextExecutor, co
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(registrationColumnsWithDefault, o)
 
@@ -679,7 +476,7 @@ func (o *Registration) Insert(ctx context.Context, exec boil.ContextExecutor, co
 		registrationInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Registration.
@@ -687,9 +484,6 @@ func (o *Registration) Insert(ctx context.Context, exec boil.ContextExecutor, co
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Registration) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	registrationUpdateCacheMut.RLock()
 	cache, cached := registrationUpdateCache[key]
@@ -743,7 +537,7 @@ func (o *Registration) Update(ctx context.Context, exec boil.ContextExecutor, co
 		registrationUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -816,10 +610,6 @@ func (o RegistrationSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 func (o *Registration) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no registrations provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(registrationColumnsWithDefault, o)
@@ -927,7 +717,7 @@ func (o *Registration) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		registrationUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Registration record with an executor.
@@ -935,10 +725,6 @@ func (o *Registration) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 func (o *Registration) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Registration provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), registrationPrimaryKeyMapping)
@@ -957,10 +743,6 @@ func (o *Registration) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for registrations")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -993,14 +775,6 @@ func (o RegistrationSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 		return 0, nil
 	}
 
-	if len(registrationBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), registrationPrimaryKeyMapping)
@@ -1023,14 +797,6 @@ func (o RegistrationSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for registrations")
-	}
-
-	if len(registrationAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

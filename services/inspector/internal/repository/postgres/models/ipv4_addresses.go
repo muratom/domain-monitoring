@@ -102,8 +102,6 @@ type (
 	// Ipv4AddressSlice is an alias for a slice of pointers to Ipv4Address.
 	// This should almost always be used instead of []Ipv4Address.
 	Ipv4AddressSlice []*Ipv4Address
-	// Ipv4AddressHook is the signature for custom Ipv4Address hook methods
-	Ipv4AddressHook func(context.Context, boil.ContextExecutor, *Ipv4Address) error
 
 	ipv4AddressQuery struct {
 		*queries.Query
@@ -131,179 +129,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var ipv4AddressAfterSelectHooks []Ipv4AddressHook
-
-var ipv4AddressBeforeInsertHooks []Ipv4AddressHook
-var ipv4AddressAfterInsertHooks []Ipv4AddressHook
-
-var ipv4AddressBeforeUpdateHooks []Ipv4AddressHook
-var ipv4AddressAfterUpdateHooks []Ipv4AddressHook
-
-var ipv4AddressBeforeDeleteHooks []Ipv4AddressHook
-var ipv4AddressAfterDeleteHooks []Ipv4AddressHook
-
-var ipv4AddressBeforeUpsertHooks []Ipv4AddressHook
-var ipv4AddressAfterUpsertHooks []Ipv4AddressHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Ipv4Address) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Ipv4Address) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Ipv4Address) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Ipv4Address) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Ipv4Address) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Ipv4Address) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Ipv4Address) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Ipv4Address) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Ipv4Address) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range ipv4AddressAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddIpv4AddressHook registers your hook function for all future operations.
-func AddIpv4AddressHook(hookPoint boil.HookPoint, ipv4AddressHook Ipv4AddressHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		ipv4AddressAfterSelectHooks = append(ipv4AddressAfterSelectHooks, ipv4AddressHook)
-	case boil.BeforeInsertHook:
-		ipv4AddressBeforeInsertHooks = append(ipv4AddressBeforeInsertHooks, ipv4AddressHook)
-	case boil.AfterInsertHook:
-		ipv4AddressAfterInsertHooks = append(ipv4AddressAfterInsertHooks, ipv4AddressHook)
-	case boil.BeforeUpdateHook:
-		ipv4AddressBeforeUpdateHooks = append(ipv4AddressBeforeUpdateHooks, ipv4AddressHook)
-	case boil.AfterUpdateHook:
-		ipv4AddressAfterUpdateHooks = append(ipv4AddressAfterUpdateHooks, ipv4AddressHook)
-	case boil.BeforeDeleteHook:
-		ipv4AddressBeforeDeleteHooks = append(ipv4AddressBeforeDeleteHooks, ipv4AddressHook)
-	case boil.AfterDeleteHook:
-		ipv4AddressAfterDeleteHooks = append(ipv4AddressAfterDeleteHooks, ipv4AddressHook)
-	case boil.BeforeUpsertHook:
-		ipv4AddressBeforeUpsertHooks = append(ipv4AddressBeforeUpsertHooks, ipv4AddressHook)
-	case boil.AfterUpsertHook:
-		ipv4AddressAfterUpsertHooks = append(ipv4AddressAfterUpsertHooks, ipv4AddressHook)
-	}
-}
-
 // One returns a single ipv4Address record from the query.
 func (q ipv4AddressQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Ipv4Address, error) {
 	o := &Ipv4Address{}
@@ -318,10 +143,6 @@ func (q ipv4AddressQuery) One(ctx context.Context, exec boil.ContextExecutor) (*
 		return nil, errors.Wrap(err, "models: failed to execute a one query for ipv4_addresses")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -332,14 +153,6 @@ func (q ipv4AddressQuery) All(ctx context.Context, exec boil.ContextExecutor) (I
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Ipv4Address slice")
-	}
-
-	if len(ipv4AddressAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -469,14 +282,6 @@ func (ipv4AddressL) LoadDomain(ctx context.Context, e boil.ContextExecutor, sing
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -588,10 +393,6 @@ func FindIpv4Address(ctx context.Context, exec boil.ContextExecutor, iD int, sel
 		return nil, errors.Wrap(err, "models: unable to select from ipv4_addresses")
 	}
 
-	if err = ipv4AddressObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return ipv4AddressObj, err
-	}
-
 	return ipv4AddressObj, nil
 }
 
@@ -603,10 +404,6 @@ func (o *Ipv4Address) Insert(ctx context.Context, exec boil.ContextExecutor, col
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(ipv4AddressColumnsWithDefault, o)
 
@@ -672,7 +469,7 @@ func (o *Ipv4Address) Insert(ctx context.Context, exec boil.ContextExecutor, col
 		ipv4AddressInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Ipv4Address.
@@ -680,9 +477,6 @@ func (o *Ipv4Address) Insert(ctx context.Context, exec boil.ContextExecutor, col
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Ipv4Address) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	ipv4AddressUpdateCacheMut.RLock()
 	cache, cached := ipv4AddressUpdateCache[key]
@@ -736,7 +530,7 @@ func (o *Ipv4Address) Update(ctx context.Context, exec boil.ContextExecutor, col
 		ipv4AddressUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -809,10 +603,6 @@ func (o Ipv4AddressSlice) UpdateAll(ctx context.Context, exec boil.ContextExecut
 func (o *Ipv4Address) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no ipv4_addresses provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(ipv4AddressColumnsWithDefault, o)
@@ -920,7 +710,7 @@ func (o *Ipv4Address) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 		ipv4AddressUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Ipv4Address record with an executor.
@@ -928,10 +718,6 @@ func (o *Ipv4Address) Upsert(ctx context.Context, exec boil.ContextExecutor, upd
 func (o *Ipv4Address) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Ipv4Address provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), ipv4AddressPrimaryKeyMapping)
@@ -950,10 +736,6 @@ func (o *Ipv4Address) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for ipv4_addresses")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -986,14 +768,6 @@ func (o Ipv4AddressSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 		return 0, nil
 	}
 
-	if len(ipv4AddressBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), ipv4AddressPrimaryKeyMapping)
@@ -1016,14 +790,6 @@ func (o Ipv4AddressSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for ipv4_addresses")
-	}
-
-	if len(ipv4AddressAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

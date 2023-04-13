@@ -12,6 +12,7 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres/models"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // TODO: split this file in multiple parts
@@ -28,64 +29,54 @@ func NewDomainRepository(dbConnection *sql.DB, cacheSize int) *DomainRepository 
 }
 
 func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.Domain, error) {
-	// TODO: use cache
-	domainName, err := models.Domains(models.DomainWhere.FQDN.EQ(fqdn)).One(ctx, r.Conn)
+	if v, ok := r.cache.Get(fqdn); ok {
+		return v.(*entity.Domain), nil
+	}
+
+	domainName, err := models.Domains(
+		models.DomainWhere.FQDN.EQ(fqdn),
+		qm.Load(models.DomainRels.Ipv4Addresses),
+		qm.Load(models.DomainRels.Ipv6Addresses),
+		qm.Load(models.DomainRels.CanonicalNames),
+		qm.Load(models.DomainRels.MailExchangers),
+		qm.Load(models.DomainRels.NameServers),
+		qm.Load(models.DomainRels.ServerSelections),
+		qm.Load(models.DomainRels.TextStrings),
+		qm.Load(models.DomainRels.Registrations),
+	).One(ctx, r.Conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", fqdn, err)
 	}
 
-	ipAddressesV4, err := domainName.Ipv4Addresses().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get IPv4 from DB for FQDN (%s): %w", fqdn, err)
-	}
-	ip4 := make([]string, len(ipAddressesV4))
-	for i, ip := range ipAddressesV4 {
+	ip4 := make([]string, len(domainName.R.Ipv4Addresses))
+	for i, ip := range domainName.R.Ipv4Addresses {
 		ip4[i] = ip.IP
 	}
 
-	ipAddressesV6, err := domainName.Ipv6Addresses().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get IPv6 from DB for FQDN (%s): %w", fqdn, err)
-	}
-	ip6 := make([]string, len(ipAddressesV6))
-	for i, ip := range ipAddressesV6 {
+	ip6 := make([]string, len(domainName.R.Ipv6Addresses))
+	for i, ip := range domainName.R.Ipv6Addresses {
 		ip6[i] = ip.IP
 	}
 
-	canonicalNames, err := domainName.CanonicalNames().One(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get CNAME from DB for FQDN (%s): %w", fqdn, err)
-	}
+	canonicalName := domainName.R.CanonicalNames[0]
 
-	mailExchangers, err := domainName.MailExchangers().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get MX from DB for FQDN (%s): %w", fqdn, err)
-	}
-	mx := make([]dns.MX, len(mailExchangers))
-	for i, m := range mailExchangers {
+	mx := make([]dns.MX, len(domainName.R.MailExchangers))
+	for i, m := range domainName.R.MailExchangers {
 		mx[i] = dns.MX{
 			Host: m.Host,
 			Pref: uint16(m.Pref),
 		}
 	}
 
-	nameServers, err := domainName.NameServers().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get NS from DB for FQDN (%s): %w", fqdn, err)
-	}
-	ns := make([]dns.NS, len(nameServers))
-	for i, n := range nameServers {
+	ns := make([]dns.NS, len(domainName.R.NameServers))
+	for i, n := range domainName.R.NameServers {
 		ns[i] = dns.NS{
 			Host: n.NameServer,
 		}
 	}
 
-	serverSelections, err := domainName.ServerSelections().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get SRV from DB for FQDN (%s): %w", fqdn, err)
-	}
-	srv := make([]dns.SRV, len(serverSelections))
-	for i, s := range serverSelections {
+	srv := make([]dns.SRV, len(domainName.R.ServerSelections))
+	for i, s := range domainName.R.ServerSelections {
 		srv[i] = dns.SRV{
 			Target:   s.Target,
 			Port:     uint16(s.Port),
@@ -94,21 +85,14 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		}
 	}
 
-	textStrings, err := domainName.TextStrings().All(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get TXT from DB for FQDN (%s): %w", fqdn, err)
-	}
-	txt := make([]string, len(textStrings))
-	for i, t := range textStrings {
+	txt := make([]string, len(domainName.R.TextStrings))
+	for i, t := range domainName.R.TextStrings {
 		txt[i] = t.Text
 	}
 
-	whoisInfo, err := domainName.Registrations().One(ctx, r.Conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get WHOIS from DB for FQDN (%s): %w", fqdn, err)
-	}
+	whoisInfo := domainName.R.Registrations[0]
 
-	return &entity.Domain{
+	result := &entity.Domain{
 		FQDN: domainName.FQDN,
 		WHOIS: whois.Record{
 			DomainName:  domainName.FQDN,
@@ -119,20 +103,24 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		DNS: dns.ResourceRecords{
 			A:     ip4,
 			AAAA:  ip6,
-			CNAME: canonicalNames.CanonicalName,
+			CNAME: canonicalName.CanonicalName,
 			MX:    mx,
 			NS:    ns,
 			SRV:   srv,
 			TXT:   txt,
 		},
-	}, nil
+	}
+
+	r.cache.Add(fqdn, result)
+
+	return result, nil
 }
 
 func (r *DomainRepository) Store(ctx context.Context, domain entity.Domain) error {
 	domainName := models.Domain{
 		FQDN:        domain.FQDN,
 		UpdateAt:    time.Now(),
-		UpdateDelay: "1W",
+		UpdateDelay: "1W", // TODO: move to function parameters
 	}
 
 	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})

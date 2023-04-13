@@ -200,8 +200,6 @@ type (
 	// DomainSlice is an alias for a slice of pointers to Domain.
 	// This should almost always be used instead of []Domain.
 	DomainSlice []*Domain
-	// DomainHook is the signature for custom Domain hook methods
-	DomainHook func(context.Context, boil.ContextExecutor, *Domain) error
 
 	domainQuery struct {
 		*queries.Query
@@ -229,179 +227,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var domainAfterSelectHooks []DomainHook
-
-var domainBeforeInsertHooks []DomainHook
-var domainAfterInsertHooks []DomainHook
-
-var domainBeforeUpdateHooks []DomainHook
-var domainAfterUpdateHooks []DomainHook
-
-var domainBeforeDeleteHooks []DomainHook
-var domainAfterDeleteHooks []DomainHook
-
-var domainBeforeUpsertHooks []DomainHook
-var domainAfterUpsertHooks []DomainHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *Domain) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Domain) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Domain) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Domain) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Domain) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Domain) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Domain) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Domain) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Domain) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range domainAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddDomainHook registers your hook function for all future operations.
-func AddDomainHook(hookPoint boil.HookPoint, domainHook DomainHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		domainAfterSelectHooks = append(domainAfterSelectHooks, domainHook)
-	case boil.BeforeInsertHook:
-		domainBeforeInsertHooks = append(domainBeforeInsertHooks, domainHook)
-	case boil.AfterInsertHook:
-		domainAfterInsertHooks = append(domainAfterInsertHooks, domainHook)
-	case boil.BeforeUpdateHook:
-		domainBeforeUpdateHooks = append(domainBeforeUpdateHooks, domainHook)
-	case boil.AfterUpdateHook:
-		domainAfterUpdateHooks = append(domainAfterUpdateHooks, domainHook)
-	case boil.BeforeDeleteHook:
-		domainBeforeDeleteHooks = append(domainBeforeDeleteHooks, domainHook)
-	case boil.AfterDeleteHook:
-		domainAfterDeleteHooks = append(domainAfterDeleteHooks, domainHook)
-	case boil.BeforeUpsertHook:
-		domainBeforeUpsertHooks = append(domainBeforeUpsertHooks, domainHook)
-	case boil.AfterUpsertHook:
-		domainAfterUpsertHooks = append(domainAfterUpsertHooks, domainHook)
-	}
-}
-
 // One returns a single domain record from the query.
 func (q domainQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Domain, error) {
 	o := &Domain{}
@@ -416,10 +241,6 @@ func (q domainQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Domai
 		return nil, errors.Wrap(err, "models: failed to execute a one query for domains")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -430,14 +251,6 @@ func (q domainQuery) All(ctx context.Context, exec boil.ContextExecutor) (Domain
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Domain slice")
-	}
-
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -666,13 +479,6 @@ func (domainL) LoadCanonicalNames(ctx context.Context, e boil.ContextExecutor, s
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for canonical_names")
 	}
 
-	if len(canonicalNameAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.CanonicalNames = resultSlice
 		for _, foreign := range resultSlice {
@@ -780,13 +586,6 @@ func (domainL) LoadIpv4Addresses(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ipv4_addresses")
 	}
 
-	if len(ipv4AddressAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.Ipv4Addresses = resultSlice
 		for _, foreign := range resultSlice {
@@ -894,13 +693,6 @@ func (domainL) LoadIpv6Addresses(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ipv6_addresses")
 	}
 
-	if len(ipv6AddressAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.Ipv6Addresses = resultSlice
 		for _, foreign := range resultSlice {
@@ -1008,13 +800,6 @@ func (domainL) LoadMailExchangers(ctx context.Context, e boil.ContextExecutor, s
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for mail_exchangers")
 	}
 
-	if len(mailExchangerAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.MailExchangers = resultSlice
 		for _, foreign := range resultSlice {
@@ -1122,13 +907,6 @@ func (domainL) LoadNameServers(ctx context.Context, e boil.ContextExecutor, sing
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for name_servers")
 	}
 
-	if len(nameServerAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.NameServers = resultSlice
 		for _, foreign := range resultSlice {
@@ -1236,13 +1014,6 @@ func (domainL) LoadRegistrations(ctx context.Context, e boil.ContextExecutor, si
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for registrations")
 	}
 
-	if len(registrationAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.Registrations = resultSlice
 		for _, foreign := range resultSlice {
@@ -1350,13 +1121,6 @@ func (domainL) LoadServerSelections(ctx context.Context, e boil.ContextExecutor,
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for server_selections")
 	}
 
-	if len(serverSelectionAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.ServerSelections = resultSlice
 		for _, foreign := range resultSlice {
@@ -1464,13 +1228,6 @@ func (domainL) LoadTextStrings(ctx context.Context, e boil.ContextExecutor, sing
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for text_strings")
 	}
 
-	if len(textStringAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
 	if singular {
 		object.R.TextStrings = resultSlice
 		for _, foreign := range resultSlice {
@@ -1956,10 +1713,6 @@ func FindDomain(ctx context.Context, exec boil.ContextExecutor, iD int, selectCo
 		return nil, errors.Wrap(err, "models: unable to select from domains")
 	}
 
-	if err = domainObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return domainObj, err
-	}
-
 	return domainObj, nil
 }
 
@@ -1971,10 +1724,6 @@ func (o *Domain) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(domainColumnsWithDefault, o)
 
@@ -2040,7 +1789,7 @@ func (o *Domain) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 		domainInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the Domain.
@@ -2048,9 +1797,6 @@ func (o *Domain) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *Domain) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	domainUpdateCacheMut.RLock()
 	cache, cached := domainUpdateCache[key]
@@ -2104,7 +1850,7 @@ func (o *Domain) Update(ctx context.Context, exec boil.ContextExecutor, columns 
 		domainUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -2177,10 +1923,6 @@ func (o DomainSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, c
 func (o *Domain) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no domains provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(domainColumnsWithDefault, o)
@@ -2288,7 +2030,7 @@ func (o *Domain) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 		domainUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single Domain record with an executor.
@@ -2296,10 +2038,6 @@ func (o *Domain) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 func (o *Domain) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Domain provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), domainPrimaryKeyMapping)
@@ -2318,10 +2056,6 @@ func (o *Domain) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for domains")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -2354,14 +2088,6 @@ func (o DomainSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (
 		return 0, nil
 	}
 
-	if len(domainBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), domainPrimaryKeyMapping)
@@ -2384,14 +2110,6 @@ func (o DomainSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for domains")
-	}
-
-	if len(domainAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

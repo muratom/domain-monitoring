@@ -102,8 +102,6 @@ type (
 	// TextStringSlice is an alias for a slice of pointers to TextString.
 	// This should almost always be used instead of []TextString.
 	TextStringSlice []*TextString
-	// TextStringHook is the signature for custom TextString hook methods
-	TextStringHook func(context.Context, boil.ContextExecutor, *TextString) error
 
 	textStringQuery struct {
 		*queries.Query
@@ -131,179 +129,6 @@ var (
 	_ = qmhelper.Where
 )
 
-var textStringAfterSelectHooks []TextStringHook
-
-var textStringBeforeInsertHooks []TextStringHook
-var textStringAfterInsertHooks []TextStringHook
-
-var textStringBeforeUpdateHooks []TextStringHook
-var textStringAfterUpdateHooks []TextStringHook
-
-var textStringBeforeDeleteHooks []TextStringHook
-var textStringAfterDeleteHooks []TextStringHook
-
-var textStringBeforeUpsertHooks []TextStringHook
-var textStringAfterUpsertHooks []TextStringHook
-
-// doAfterSelectHooks executes all "after Select" hooks.
-func (o *TextString) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringAfterSelectHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeInsertHooks executes all "before insert" hooks.
-func (o *TextString) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringBeforeInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterInsertHooks executes all "after Insert" hooks.
-func (o *TextString) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringAfterInsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *TextString) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringBeforeUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpdateHooks executes all "after Update" hooks.
-func (o *TextString) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringAfterUpdateHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *TextString) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringBeforeDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *TextString) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringAfterDeleteHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *TextString) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringBeforeUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *TextString) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
-	if boil.HooksAreSkipped(ctx) {
-		return nil
-	}
-
-	for _, hook := range textStringAfterUpsertHooks {
-		if err := hook(ctx, exec, o); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// AddTextStringHook registers your hook function for all future operations.
-func AddTextStringHook(hookPoint boil.HookPoint, textStringHook TextStringHook) {
-	switch hookPoint {
-	case boil.AfterSelectHook:
-		textStringAfterSelectHooks = append(textStringAfterSelectHooks, textStringHook)
-	case boil.BeforeInsertHook:
-		textStringBeforeInsertHooks = append(textStringBeforeInsertHooks, textStringHook)
-	case boil.AfterInsertHook:
-		textStringAfterInsertHooks = append(textStringAfterInsertHooks, textStringHook)
-	case boil.BeforeUpdateHook:
-		textStringBeforeUpdateHooks = append(textStringBeforeUpdateHooks, textStringHook)
-	case boil.AfterUpdateHook:
-		textStringAfterUpdateHooks = append(textStringAfterUpdateHooks, textStringHook)
-	case boil.BeforeDeleteHook:
-		textStringBeforeDeleteHooks = append(textStringBeforeDeleteHooks, textStringHook)
-	case boil.AfterDeleteHook:
-		textStringAfterDeleteHooks = append(textStringAfterDeleteHooks, textStringHook)
-	case boil.BeforeUpsertHook:
-		textStringBeforeUpsertHooks = append(textStringBeforeUpsertHooks, textStringHook)
-	case boil.AfterUpsertHook:
-		textStringAfterUpsertHooks = append(textStringAfterUpsertHooks, textStringHook)
-	}
-}
-
 // One returns a single textString record from the query.
 func (q textStringQuery) One(ctx context.Context, exec boil.ContextExecutor) (*TextString, error) {
 	o := &TextString{}
@@ -318,10 +143,6 @@ func (q textStringQuery) One(ctx context.Context, exec boil.ContextExecutor) (*T
 		return nil, errors.Wrap(err, "models: failed to execute a one query for text_strings")
 	}
 
-	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
-		return o, err
-	}
-
 	return o, nil
 }
 
@@ -332,14 +153,6 @@ func (q textStringQuery) All(ctx context.Context, exec boil.ContextExecutor) (Te
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to TextString slice")
-	}
-
-	if len(textStringAfterSelectHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
-				return o, err
-			}
-		}
 	}
 
 	return o, nil
@@ -469,14 +282,6 @@ func (textStringL) LoadDomain(ctx context.Context, e boil.ContextExecutor, singu
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for domains")
 	}
 
-	if len(domainAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(resultSlice) == 0 {
 		return nil
 	}
@@ -588,10 +393,6 @@ func FindTextString(ctx context.Context, exec boil.ContextExecutor, iD int, sele
 		return nil, errors.Wrap(err, "models: unable to select from text_strings")
 	}
 
-	if err = textStringObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return textStringObj, err
-	}
-
 	return textStringObj, nil
 }
 
@@ -603,10 +404,6 @@ func (o *TextString) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 	}
 
 	var err error
-
-	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
-		return err
-	}
 
 	nzDefaults := queries.NonZeroDefaultSet(textStringColumnsWithDefault, o)
 
@@ -672,7 +469,7 @@ func (o *TextString) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 		textStringInsertCacheMut.Unlock()
 	}
 
-	return o.doAfterInsertHooks(ctx, exec)
+	return nil
 }
 
 // Update uses an executor to update the TextString.
@@ -680,9 +477,6 @@ func (o *TextString) Insert(ctx context.Context, exec boil.ContextExecutor, colu
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
 func (o *TextString) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
-	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
-		return 0, err
-	}
 	key := makeCacheKey(columns, nil)
 	textStringUpdateCacheMut.RLock()
 	cache, cached := textStringUpdateCache[key]
@@ -736,7 +530,7 @@ func (o *TextString) Update(ctx context.Context, exec boil.ContextExecutor, colu
 		textStringUpdateCacheMut.Unlock()
 	}
 
-	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
+	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values.
@@ -809,10 +603,6 @@ func (o TextStringSlice) UpdateAll(ctx context.Context, exec boil.ContextExecuto
 func (o *TextString) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no text_strings provided for upsert")
-	}
-
-	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
-		return err
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(textStringColumnsWithDefault, o)
@@ -920,7 +710,7 @@ func (o *TextString) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 		textStringUpsertCacheMut.Unlock()
 	}
 
-	return o.doAfterUpsertHooks(ctx, exec)
+	return nil
 }
 
 // Delete deletes a single TextString record with an executor.
@@ -928,10 +718,6 @@ func (o *TextString) Upsert(ctx context.Context, exec boil.ContextExecutor, upda
 func (o *TextString) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no TextString provided for delete")
-	}
-
-	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), textStringPrimaryKeyMapping)
@@ -950,10 +736,6 @@ func (o *TextString) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for text_strings")
-	}
-
-	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
-		return 0, err
 	}
 
 	return rowsAff, nil
@@ -986,14 +768,6 @@ func (o TextStringSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 		return 0, nil
 	}
 
-	if len(textStringBeforeDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
-	}
-
 	var args []interface{}
 	for _, obj := range o {
 		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), textStringPrimaryKeyMapping)
@@ -1016,14 +790,6 @@ func (o TextStringSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for text_strings")
-	}
-
-	if len(textStringAfterDeleteHooks) != 0 {
-		for _, obj := range o {
-			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
-				return 0, err
-			}
-		}
 	}
 
 	return rowsAff, nil

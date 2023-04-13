@@ -510,9 +510,6 @@ func (o *ServerSelection) Update(ctx context.Context, exec boil.ContextExecutor,
 		)
 		wl = strmangle.SetComplement(wl, serverSelectionGeneratedColumns)
 
-		if !columns.IsWhitelist() {
-			wl = strmangle.SetComplement(wl, []string{"created_at"})
-		}
 		if len(wl) == 0 {
 			return 0, errors.New("models: unable to update server_selections, could not build whitelist")
 		}

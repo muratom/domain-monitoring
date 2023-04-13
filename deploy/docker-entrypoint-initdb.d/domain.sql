@@ -1,20 +1,20 @@
 CREATE TABLE IF NOT EXISTS domains (
     id INT GENERATED ALWAYS AS IDENTITY,
     fqdn TEXT NOT NULL UNIQUE,
-    update_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
     update_delay INTERVAL NOT NULL,
     PRIMARY KEY (id)
 );
 
 INSERT INTO domains (
     fqdn, 
-    update_at, 
+    updated_at, 
     update_delay
 )
 VALUES
-    ('yandex.ru.', '2023-04-12 10:10:10', '1W'),
-    ('ozon.ru.', '2023-03-01 00:00:01', '1M'),
-    ('mail.ru.', '2023-04-04 12:12:12', '1Y');
+    ('yandex.ru.', '2023-04-13 10:10:10', '1 day'),
+    ('ozon.ru.', '2023-03-01 00:00:01', '1 day'),
+    ('mail.ru.', '2023-04-04 12:12:12', '1 day');
 
 CREATE TABLE IF NOT EXISTS ipv4_addresses (
     id INT GENERATED ALWAYS AS IDENTITY,
@@ -186,3 +186,24 @@ VALUES
     (1, '2000-04-12 10:10:10', '2023-12-12 23:00:00'),
     (2, '2001-03-01 00:00:01', '2023-08-15 20:00:00'),
     (3, '1999-04-04 12:12:12', '2023-06-20 12:30:00');
+
+CREATE TABLE IF NOT EXISTS changelogs (
+    id INT GENERATED ALWAYS AS IDENTITY,
+    domain_id INT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    changes JSONB NOT NULL,
+
+    PRIMARY KEY (id),
+    FOREIGN KEY (domain_id)
+        REFERENCES domains (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+INSERT INTO changelogs (
+    domain_id,
+    created_at,
+    changes
+)
+VALUES
+    (1, '2023-12-12 23:00:00', '[{"type": "update", "path": ["FQDN"], "from": "a.ru", "to": "b.ru"}, {"type": "delete", "path": ["DNS", "A", "1"], "from": "2.2.2.2", "to": ""}]');

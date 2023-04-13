@@ -496,9 +496,6 @@ func (o *MailExchanger) Update(ctx context.Context, exec boil.ContextExecutor, c
 		)
 		wl = strmangle.SetComplement(wl, mailExchangerGeneratedColumns)
 
-		if !columns.IsWhitelist() {
-			wl = strmangle.SetComplement(wl, []string{"created_at"})
-		}
 		if len(wl) == 0 {
 			return 0, errors.New("models: unable to update mail_exchangers, could not build whitelist")
 		}

@@ -5,6 +5,7 @@ package models
 
 var TableNames = struct {
 	CanonicalNames   string
+	Changelogs       string
 	Domains          string
 	Ipv4Addresses    string
 	Ipv6Addresses    string
@@ -15,6 +16,7 @@ var TableNames = struct {
 	TextStrings      string
 }{
 	CanonicalNames:   "canonical_names",
+	Changelogs:       "changelogs",
 	Domains:          "domains",
 	Ipv4Addresses:    "ipv4_addresses",
 	Ipv6Addresses:    "ipv6_addresses",

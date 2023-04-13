@@ -489,9 +489,6 @@ func (o *NameServer) Update(ctx context.Context, exec boil.ContextExecutor, colu
 		)
 		wl = strmangle.SetComplement(wl, nameServerGeneratedColumns)
 
-		if !columns.IsWhitelist() {
-			wl = strmangle.SetComplement(wl, []string{"created_at"})
-		}
 		if len(wl) == 0 {
 			return 0, errors.New("models: unable to update name_servers, could not build whitelist")
 		}

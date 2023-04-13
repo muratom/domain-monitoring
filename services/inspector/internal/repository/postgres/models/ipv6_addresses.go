@@ -489,9 +489,6 @@ func (o *Ipv6Address) Update(ctx context.Context, exec boil.ContextExecutor, col
 		)
 		wl = strmangle.SetComplement(wl, ipv6AddressGeneratedColumns)
 
-		if !columns.IsWhitelist() {
-			wl = strmangle.SetComplement(wl, []string{"created_at"})
-		}
 		if len(wl) == 0 {
 			return 0, errors.New("models: unable to update ipv6_addresses, could not build whitelist")
 		}

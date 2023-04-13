@@ -15,7 +15,7 @@ type grpcEmitterClient struct {
 	grpcClient pb.EmitterClient
 }
 
-func NewGrpcEmitterClient(cc grpc.ClientConnInterface) *grpcEmitterClient {
+func NewGrpcEmitterClient(cc *grpc.ClientConn) *grpcEmitterClient {
 	return &grpcEmitterClient{
 		grpcClient: pb.NewEmitterClient(cc),
 	}

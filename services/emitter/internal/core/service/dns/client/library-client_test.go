@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/foxcpp/go-mockdns"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,20 +54,50 @@ func (s *LibraryClientTestSuite) TearDownSuite() {
 
 func (s *LibraryClientTestSuite) TestAllResourceRecords() {
 	dnsClient := NewLibraryClient(s.netResolver)
-	rr, err := dnsClient.LookupRR(context.Background(), "www.example.com")
+	rr, err := dnsClient.LookupRR(context.Background(), dns.LookupParams{FQDN: "www.example.com"})
 	s.Require().NoError(err)
 	s.Require().ElementsMatch([]string{"1.2.3.4", "42.73.7.2"}, rr.A)
 	s.Require().Equal("example.com.", rr.CNAME)
-	s.Require().ElementsMatch([]dns.MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
-	s.Require().ElementsMatch([]dns.TXT{"abracadabra"}, rr.TXT)
+	s.Require().ElementsMatch([]dnsentity.MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
+	s.Require().ElementsMatch([]dnsentity.TXT{"abracadabra"}, rr.TXT)
 
-	expectedNS := []dns.NS{
+	expectedNS := []dnsentity.NS{
 		{Host: "ns1.example.com."},
 		{Host: "ns2.example.com."},
 	}
 	s.Require().ElementsMatch(expectedNS, rr.NS)
 
-	expectedSRV := []dns.SRV{
+	expectedSRV := []dnsentity.SRV{
+		{
+			Target:   "sipserver.example.com.",
+			Port:     72,
+			Priority: 0,
+		},
+	}
+	s.Require().ElementsMatch(expectedSRV, rr.SRV)
+}
+
+func (s *LibraryClientTestSuite) TestAllResourceRecordsWithDNSServerSet() {
+	dnsClient := NewLibraryClient(s.netResolver)
+	s.dnsServerMock.Authoritative = true
+	lookupParams := dns.LookupParams{
+		FQDN:          "www.example.com",
+		DNSServerHost: s.dnsServerMock.LocalAddr().String(),
+	}
+	rr, err := dnsClient.LookupRR(context.Background(), lookupParams)
+	s.Require().NoError(err)
+	s.Require().ElementsMatch([]string{"1.2.3.4", "42.73.7.2"}, rr.A)
+	s.Require().Equal("example.com.", rr.CNAME)
+	s.Require().ElementsMatch([]dnsentity.MX{{Host: "mail.example.com.", Pref: 10}}, rr.MX)
+	s.Require().ElementsMatch([]dnsentity.TXT{"abracadabra"}, rr.TXT)
+
+	expectedNS := []dnsentity.NS{
+		{Host: "ns1.example.com."},
+		{Host: "ns2.example.com."},
+	}
+	s.Require().ElementsMatch(expectedNS, rr.NS)
+
+	expectedSRV := []dnsentity.SRV{
 		{
 			Target:   "sipserver.example.com.",
 			Port:     72,

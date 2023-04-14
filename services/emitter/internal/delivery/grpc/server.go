@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -26,7 +27,11 @@ func NewEmitterServer(dnsService dnsService, whoisService whoisService) *Emitter
 }
 
 func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.ResourceRecords, error) {
-	resourceRecords, err := e.dnsService.LookupResourceRecords(ctx, req.GetFqdn())
+	lookupParams := dns.LookupParams{
+		FQDN:          req.Fqdn,
+		DNSServerHost: req.Host,
+	}
+	resourceRecords, err := e.dnsService.LookupResourceRecords(ctx, lookupParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup resource records for FQDN (%v): %w", req.GetFqdn(), err)
 	}
@@ -34,7 +39,7 @@ func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.
 	return buildResourceRecordsResponse(ctx, resourceRecords), nil
 }
 
-func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dns.ResourceRecords) *pb.ResourceRecords {
+func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dnsentity.ResourceRecords) *pb.ResourceRecords {
 	mx := make([]*pb.MX, len(resourceRecords.MX))
 	for i, m := range resourceRecords.MX {
 		mx[i] = &pb.MX{

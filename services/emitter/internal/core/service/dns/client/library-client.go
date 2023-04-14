@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	client "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 )
 
 type LibraryClient struct {
@@ -13,14 +15,25 @@ type LibraryClient struct {
 }
 
 func NewLibraryClient(resolver *net.Resolver) *LibraryClient {
-	resolver.StrictErrors = true
 	return &LibraryClient{
 		resolver: resolver,
 	}
 }
 
-func (c *LibraryClient) LookupRR(ctx context.Context, host string) (*dns.ResourceRecords, error) {
-	ips, err := c.resolver.LookupIP(ctx, "ip", host)
+func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.LookupParams) (*dns.ResourceRecords, error) {
+	resolver := c.resolver
+	if lookupParams.DNSServerHost != "" {
+		resolver.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{
+				Timeout: time.Millisecond * time.Duration(10000),
+			}
+			return d.DialContext(ctx, network, lookupParams.DNSServerHost)
+		}
+	}
+
+	host := lookupParams.FQDN
+
+	ips, err := resolver.LookupIP(ctx, "ip", host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IP addresses for the host (%s): %w", host, err)
 	}

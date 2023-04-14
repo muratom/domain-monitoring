@@ -9,6 +9,7 @@ import "google/protobuf/timestamp.proto";
 
 message GetDNSRequest {
     string fqdn = 1;
+    string host = 2;
 }
 
 message MX {

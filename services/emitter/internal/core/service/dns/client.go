@@ -6,6 +6,11 @@ import (
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 )
 
+type LookupParams struct {
+	FQDN          string
+	DNSServerHost string
+}
+
 type Client interface {
-	LookupRR(ctx context.Context, fqdn string) (*dns.ResourceRecords, error)
+	LookupRR(ctx context.Context, params LookupParams) (*dns.ResourceRecords, error)
 }

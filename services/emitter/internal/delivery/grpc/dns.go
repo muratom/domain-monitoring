@@ -3,9 +3,10 @@ package grpc
 import (
 	"context"
 
-	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
+	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 )
 
 type dnsService interface {
-	LookupResourceRecords(ctx context.Context, fqdn string) (*dns.ResourceRecords, error)
+	LookupResourceRecords(ctx context.Context, lookupParams dns.LookupParams) (*dnsentity.ResourceRecords, error)
 }

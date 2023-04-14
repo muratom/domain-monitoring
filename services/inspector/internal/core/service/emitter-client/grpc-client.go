@@ -3,19 +3,22 @@ package emitterclient
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type grpcEmitterClient struct {
 	grpcClient pb.EmitterClient
 }
 
-func NewGrpcEmitterClient(cc *grpc.ClientConn) *grpcEmitterClient {
+func NewGrpcEmitterClient(cc *grpc.ClientConn, requestTimeout time.Duration) *grpcEmitterClient {
 	return &grpcEmitterClient{
 		grpcClient: pb.NewEmitterClient(cc),
 	}
@@ -24,9 +27,24 @@ func NewGrpcEmitterClient(cc *grpc.ClientConn) *grpcEmitterClient {
 func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSRequest) (*service.GetDNSResponse, error) {
 	pbRequest := &pb.GetDNSRequest{
 		Fqdn: req.FQDN,
+		Host: req.DNSServerHost,
 	}
 	pbResponse, err := c.grpcClient.GetDNS(ctx, pbRequest)
 	if err != nil {
+		st := status.Convert(err)
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, service.ErrStopServing
+			// for _, details := range st.Details() {
+			// 	switch d := details.(type) {
+			// 	case *errdetails.ErrorInfo:
+			// 		if d.Reason == "NOT_SERVING" {
+			// 			return nil, service.ErrStopServing
+			// 		}
+			// 	}
+			// }
+		}
+
 		return nil, fmt.Errorf("emitter gRPC client's call failed: %w", err)
 	}
 

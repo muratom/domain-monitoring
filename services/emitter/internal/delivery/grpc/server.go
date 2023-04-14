@@ -2,11 +2,15 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
 	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -27,12 +31,30 @@ func NewEmitterServer(dnsService dnsService, whoisService whoisService) *Emitter
 }
 
 func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.ResourceRecords, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, status.Errorf(codes.Canceled, "EmitterServer.GetDNS cancelled")
+	}
 	lookupParams := dns.LookupParams{
 		FQDN:          req.Fqdn,
 		DNSServerHost: req.Host,
 	}
 	resourceRecords, err := e.dnsService.LookupResourceRecords(ctx, lookupParams)
 	if err != nil {
+		if errors.Is(err, dns.ErrStopServing) {
+			st := status.New(codes.NotFound, fmt.Sprintf("DNS server stop serving domain %s", req.Fqdn))
+			br := &errdetails.ErrorInfo{
+				Reason: "STOP_SERVING",
+				Metadata: map[string]string{
+					"fqdn":       req.Fqdn,
+					"dns_server": req.Host,
+				},
+			}
+			st, err = st.WithDetails(br)
+			if err != nil {
+				panic(fmt.Sprintf("Unexpected error attaching metadata: %v", err))
+			}
+			return nil, st.Err()
+		}
 		return nil, fmt.Errorf("failed to lookup resource records for FQDN (%v): %w", req.GetFqdn(), err)
 	}
 
@@ -79,6 +101,9 @@ func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dnsentit
 }
 
 func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (*pb.WhoisRecord, error) {
+	if ctx.Err() == context.Canceled {
+		return nil, status.Errorf(codes.Canceled, "EmitterServer.GetWhois cancelled")
+	}
 	whoisRecord, err := e.whoisService.FetchWhois(ctx, req.GetFqdn())
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch WHOIS for FQDN (%v): %w", req.GetFqdn(), err)

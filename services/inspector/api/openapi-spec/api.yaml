@@ -1,0 +1,175 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Emitter
+paths:
+  /v1/dns:
+    get:
+      summary: Get DNS resource records for FQDN
+      operationId: getDNS
+      tags:
+        - DNS
+      parameters:
+        - name: fqdn
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceRecords"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              
+  /v1/whois:
+    get:
+      summary: Get WHOIS registration information
+      operationId: getWHOIS
+      tags:
+        - WHOIS
+      parameters:
+        - name: fqdn
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WhoisRecord"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    MX:
+      type: object
+      required:
+        - host
+        - pref
+      properties:
+        host:
+          type: string
+        pref:
+          description: Host preference
+          type: integer
+          format: int64
+          minimum: 0
+    NS:
+      type: object
+      required:
+        - host
+      properties:
+        host:
+          type: string
+    SRV:
+      type: object
+      required:
+        - target
+        - port
+        - priority
+        - weight
+      properties:
+        target:
+          description: канонические имя машины, предоставляющей сервис
+          type: string
+        port:
+          description: порт TCP или UDP, на котором работает сервис
+          type: integer
+          format: int64
+          minimum: 0
+        priority:
+          description: приоритет целевого хоста, более низкое значение означает более предпочтительный
+          type: integer
+          format: int64
+          minimum: 0
+        weight:
+          description: относительный вес для записей c одинаковым приоритетом
+          type: integer
+          format: int64
+          minimum: 0
+    TXT:
+      type: string
+
+    ResourceRecords:
+      type: object
+      required:
+        - A
+      properties:
+        A:
+          type: array
+          items:
+            type: string
+            format: ipv4
+        AAAA:
+          type: array
+          items:
+            type: string
+            format: ipv6
+        CNAME:
+          type: string
+        MX:
+          type: array
+          items:
+            $ref: "#/components/schemas/MX"
+        NS:
+          type: array
+          items:
+            $ref: "#/components/schemas/NS"
+        SRV:
+          type: array
+          items:
+            $ref: "#/components/schemas/SRV"
+        TXT:
+          type: array
+          items:
+            $ref: "#/components/schemas/TXT"
+    
+    WhoisRecord:
+      type: object
+      required:
+        - domainName
+        - paidTill
+      properties:
+        domainName:
+          description: Доменное имя
+          type: string
+        nameServers:
+          description: Список DNS-серверов, указанных для домена
+          type: array
+          items:
+            type: string
+        created:
+          description: Дата и время регистрации домена в формате UTC
+          type: string
+          format: date-time
+        paidTill:
+          description: Дата и время окончания срока регистрации домена в формате UTC
+          type: string
+          format: date-time
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

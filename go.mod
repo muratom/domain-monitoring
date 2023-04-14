@@ -6,11 +6,13 @@ require (
 	github.com/RichardKnop/machinery v1.10.6
 	github.com/foxcpp/go-mockdns v1.0.0
 	github.com/friendsofgo/errors v0.9.2
+	github.com/gammazero/workerpool v1.1.3
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/golang/protobuf v1.5.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.3
 	github.com/lib/pq v1.10.6
 	github.com/r3labs/diff v1.1.0
+	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.8.2
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.4
@@ -34,6 +36,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/ericlagergren/decimal v0.0.0-20211103172832-aca2edc11f73 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/gammazero/deque v0.2.0 // indirect
 	github.com/go-redis/redis/v8 v8.6.0 // indirect
 	github.com/go-redsync/redsync/v4 v4.0.4 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -49,6 +52,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.11.7 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/miekg/dns v1.1.53 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

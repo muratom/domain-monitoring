@@ -2,13 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 )
 
 type GetDNSRequest struct {
-	FQDN string
+	FQDN          string
+	DNSServerHost string
 }
 
 type GetDNSResponse struct {
@@ -22,6 +24,10 @@ type GetWhoisRequest struct {
 type GetWhoisResponse struct {
 	whois.Record
 }
+
+var (
+	ErrStopServing = errors.New("DNS server stopped serving a domain")
+)
 
 type EmitterClient interface {
 	GetDNS(ctx context.Context, req *GetDNSRequest) (*GetDNSResponse, error)

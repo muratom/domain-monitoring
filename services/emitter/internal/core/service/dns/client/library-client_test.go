@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"net"
 	"testing"
 
@@ -105,6 +106,18 @@ func (s *LibraryClientTestSuite) TestAllResourceRecordsWithDNSServerSet() {
 		},
 	}
 	s.Require().ElementsMatch(expectedSRV, rr.SRV)
+}
+
+func (s *LibraryClientTestSuite) TestNotServing() {
+	dnsClient := NewLibraryClient(s.netResolver)
+	s.dnsServerMock.Authoritative = true
+	lookupParams := dns.LookupParams{
+		FQDN:          "hotstuff.com",
+		DNSServerHost: s.dnsServerMock.LocalAddr().String(),
+	}
+	_, err := dnsClient.LookupRR(context.Background(), lookupParams)
+	s.Require().Error(err)
+	s.Require().True(errors.Is(err, dns.ErrStopServing))
 }
 
 func TestLibraryClientTestSuite(t *testing.T) {

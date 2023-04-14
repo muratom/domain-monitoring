@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	client "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
+)
+
+const (
+	defaultConnectionTimeout = 5 * time.Second
 )
 
 type LibraryClient struct {
@@ -25,7 +30,8 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 	if lookupParams.DNSServerHost != "" {
 		resolver.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{
-				Timeout: time.Millisecond * time.Duration(10000),
+				// TODO: set from config
+				Timeout: defaultConnectionTimeout,
 			}
 			return d.DialContext(ctx, network, lookupParams.DNSServerHost)
 		}
@@ -35,6 +41,12 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 
 	ips, err := resolver.LookupIP(ctx, "ip", host)
 	if err != nil {
+		// Check fact of serving only here because A and AAAA records are basic
+		if dnsError, ok := err.(*net.DNSError); ok {
+			if dnsError.IsNotFound || strings.Contains(dnsError.Err, "server misbehaving") {
+				return nil, client.ErrStopServing
+			}
+		}
 		return nil, fmt.Errorf("failed to get IP addresses for the host (%s): %w", host, err)
 	}
 

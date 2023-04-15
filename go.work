@@ -4,4 +4,5 @@ use (
 	./services/emitter
 	./services/inspector
 	./api/proto/v1/emitter
+	./api/rpc/v1/inspector
 )

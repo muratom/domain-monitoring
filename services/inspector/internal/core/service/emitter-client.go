@@ -14,7 +14,8 @@ type GetDNSRequest struct {
 }
 
 type GetDNSResponse struct {
-	dns.ResourceRecords
+	Request         GetDNSRequest
+	ResourceRecords dns.ResourceRecords
 }
 
 type GetWhoisRequest struct {
@@ -22,7 +23,8 @@ type GetWhoisRequest struct {
 }
 
 type GetWhoisResponse struct {
-	whois.Record
+	Request GetWhoisRequest
+	Records whois.Records
 }
 
 var (

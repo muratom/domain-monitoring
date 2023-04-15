@@ -14,6 +14,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var (
+	stopServing = "STOP_SERVING"
+)
+
 type EmitterServer struct {
 	// All implementations must embed UnimplementedEmitterServer
 	// for forward compatibility
@@ -30,7 +34,7 @@ func NewEmitterServer(dnsService dnsService, whoisService whoisService) *Emitter
 	}
 }
 
-func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.ResourceRecords, error) {
+func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.GetDNSResponse, error) {
 	if ctx.Err() == context.Canceled {
 		return nil, status.Errorf(codes.Canceled, "EmitterServer.GetDNS cancelled")
 	}
@@ -43,7 +47,8 @@ func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.
 		if errors.Is(err, dns.ErrStopServing) {
 			st := status.New(codes.NotFound, fmt.Sprintf("DNS server stop serving domain %s", req.Fqdn))
 			br := &errdetails.ErrorInfo{
-				Reason: "STOP_SERVING",
+				Reason: stopServing,
+				Domain: "emitter",
 				Metadata: map[string]string{
 					"fqdn":       req.Fqdn,
 					"dns_server": req.Host,
@@ -58,10 +63,10 @@ func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.
 		return nil, fmt.Errorf("failed to lookup resource records for FQDN (%v): %w", req.GetFqdn(), err)
 	}
 
-	return buildResourceRecordsResponse(ctx, resourceRecords), nil
+	return buildDNSResponse(ctx, req, resourceRecords), nil
 }
 
-func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dnsentity.ResourceRecords) *pb.ResourceRecords {
+func buildDNSResponse(ctx context.Context, req *pb.GetDNSRequest, resourceRecords *dnsentity.ResourceRecords) *pb.GetDNSResponse {
 	mx := make([]*pb.MX, len(resourceRecords.MX))
 	for i, m := range resourceRecords.MX {
 		mx[i] = &pb.MX{
@@ -89,18 +94,21 @@ func buildResourceRecordsResponse(ctx context.Context, resourceRecords *dnsentit
 		txt[i] = string(t)
 	}
 
-	return &pb.ResourceRecords{
-		A:     resourceRecords.A,
-		AAAA:  resourceRecords.AAAA,
-		CNAME: resourceRecords.CNAME,
-		MX:    mx,
-		NS:    ns,
-		SRV:   srv,
-		TXT:   txt,
+	return &pb.GetDNSResponse{
+		Request: req,
+		ResourceRecords: &pb.ResourceRecords{
+			A:     resourceRecords.A,
+			AAAA:  resourceRecords.AAAA,
+			CNAME: resourceRecords.CNAME,
+			MX:    mx,
+			NS:    ns,
+			SRV:   srv,
+			TXT:   txt,
+		},
 	}
 }
 
-func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (*pb.WhoisRecord, error) {
+func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (*pb.GetWhoisResponse, error) {
 	if ctx.Err() == context.Canceled {
 		return nil, status.Errorf(codes.Canceled, "EmitterServer.GetWhois cancelled")
 	}
@@ -109,10 +117,13 @@ func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (
 		return nil, fmt.Errorf("failed to fetch WHOIS for FQDN (%v): %w", req.GetFqdn(), err)
 	}
 
-	return &pb.WhoisRecord{
-		DomainName:  whoisRecord.DomainName,
-		NameServers: whoisRecord.NameServers,
-		Created:     timestamppb.New(whoisRecord.Created),
-		PaidTill:    timestamppb.New(whoisRecord.PaidTill),
+	return &pb.GetWhoisResponse{
+		Request: req,
+		Records: &pb.WhoisRecords{
+			DomainName:  whoisRecord.DomainName,
+			NameServers: whoisRecord.NameServers,
+			Created:     timestamppb.New(whoisRecord.Created),
+			PaidTill:    timestamppb.New(whoisRecord.PaidTill),
+		},
 	}, nil
 }

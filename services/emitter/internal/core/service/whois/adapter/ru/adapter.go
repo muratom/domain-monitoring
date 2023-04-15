@@ -100,6 +100,7 @@ func (a *Adapter) ParseResponse(ctx context.Context, resp *whois.Response) (*who
 	return &whoisentity.Record{
 		DomainName:  ruResponse.domain,
 		NameServers: ruResponse.nserver,
+		Registrar:   ruResponse.registrar,
 		Created:     ruResponse.created,
 		PaidTill:    ruResponse.paidTill,
 	}, nil

@@ -85,7 +85,7 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 
 	result := &entity.Domain{
 		FQDN: domainEntry.FQDN,
-		WHOIS: whois.Record{
+		WHOIS: whois.Records{
 			DomainName:  domainEntry.FQDN,
 			NameServers: []string{},
 			Created:     whoisInfo.Created,

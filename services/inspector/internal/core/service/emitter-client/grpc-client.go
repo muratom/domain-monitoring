@@ -9,6 +9,7 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,39 +35,38 @@ func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSReque
 		st := status.Convert(err)
 		switch st.Code() {
 		case codes.NotFound:
-			return nil, service.ErrStopServing
-			// for _, details := range st.Details() {
-			// 	switch d := details.(type) {
-			// 	case *errdetails.ErrorInfo:
-			// 		if d.Reason == "NOT_SERVING" {
-			// 			return nil, service.ErrStopServing
-			// 		}
-			// 	}
-			// }
+			for _, details := range st.Details() {
+				switch d := details.(type) {
+				case *errdetails.ErrorInfo:
+					if d.Domain == "emitter" && d.Reason == "STOP_SERVING" {
+						return nil, service.ErrStopServing
+					}
+				}
+			}
 		}
 
 		return nil, fmt.Errorf("emitter gRPC client's call failed: %w", err)
 	}
 
-	return buildResourceRecordsResponse(ctx, pbResponse), nil
+	return buildDNSResponse(ctx, req, pbResponse), nil
 }
 
-func buildResourceRecordsResponse(ctx context.Context, resourceRecords *pb.ResourceRecords) *service.GetDNSResponse {
-	mx := make([]dns.MX, len(resourceRecords.MX))
-	for i, m := range resourceRecords.MX {
+func buildDNSResponse(ctx context.Context, req *service.GetDNSRequest, dnsResponse *pb.GetDNSResponse) *service.GetDNSResponse {
+	mx := make([]dns.MX, len(dnsResponse.ResourceRecords.MX))
+	for i, m := range dnsResponse.ResourceRecords.MX {
 		mx[i] = dns.MX{
 			Host: m.Host,
 			Pref: uint16(m.Pref),
 		}
 	}
-	ns := make([]dns.NS, len(resourceRecords.NS))
-	for i, n := range resourceRecords.NS {
+	ns := make([]dns.NS, len(dnsResponse.ResourceRecords.NS))
+	for i, n := range dnsResponse.ResourceRecords.NS {
 		ns[i] = dns.NS{
 			Host: n.Host,
 		}
 	}
-	srv := make([]dns.SRV, len(resourceRecords.SRV))
-	for i, s := range resourceRecords.SRV {
+	srv := make([]dns.SRV, len(dnsResponse.ResourceRecords.SRV))
+	for i, s := range dnsResponse.ResourceRecords.SRV {
 		srv[i] = dns.SRV{
 			Target:   s.Target,
 			Port:     uint16(s.Port),
@@ -76,14 +76,15 @@ func buildResourceRecordsResponse(ctx context.Context, resourceRecords *pb.Resou
 	}
 
 	return &service.GetDNSResponse{
+		Request: *req,
 		ResourceRecords: dns.ResourceRecords{
-			A:     resourceRecords.A,
-			AAAA:  resourceRecords.AAAA,
-			CNAME: resourceRecords.CNAME,
+			A:     dnsResponse.ResourceRecords.A,
+			AAAA:  dnsResponse.ResourceRecords.AAAA,
+			CNAME: dnsResponse.ResourceRecords.CNAME,
 			MX:    mx,
 			NS:    ns,
 			SRV:   srv,
-			TXT:   resourceRecords.TXT,
+			TXT:   dnsResponse.ResourceRecords.TXT,
 		},
 	}
 }
@@ -98,11 +99,13 @@ func (c *grpcEmitterClient) GetWhois(ctx context.Context, req *service.GetWhoisR
 	}
 
 	return &service.GetWhoisResponse{
-		Record: whois.Record{
-			DomainName:  pbResponse.GetDomainName(),
-			NameServers: pbResponse.GetNameServers(),
-			Created:     pbResponse.GetCreated().AsTime(),
-			PaidTill:    pbResponse.GetPaidTill().AsTime(),
+		Request: *req,
+		Records: whois.Records{
+			DomainName:  pbResponse.GetRecords().GetDomainName(),
+			NameServers: pbResponse.GetRecords().GetNameServers(),
+			Registrar:   pbResponse.GetRecords().GetRegistrar(),
+			Created:     pbResponse.GetRecords().GetCreated().AsTime(),
+			PaidTill:    pbResponse.GetRecords().GetPaidTill().AsTime(),
 		},
 	}, nil
 }

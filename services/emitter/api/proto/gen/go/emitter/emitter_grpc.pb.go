@@ -27,8 +27,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EmitterClient interface {
-	GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*ResourceRecords, error)
-	GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*WhoisRecord, error)
+	GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*GetDNSResponse, error)
+	GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*GetWhoisResponse, error)
 }
 
 type emitterClient struct {
@@ -39,8 +39,8 @@ func NewEmitterClient(cc grpc.ClientConnInterface) EmitterClient {
 	return &emitterClient{cc}
 }
 
-func (c *emitterClient) GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*ResourceRecords, error) {
-	out := new(ResourceRecords)
+func (c *emitterClient) GetDNS(ctx context.Context, in *GetDNSRequest, opts ...grpc.CallOption) (*GetDNSResponse, error) {
+	out := new(GetDNSResponse)
 	err := c.cc.Invoke(ctx, Emitter_GetDNS_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -48,8 +48,8 @@ func (c *emitterClient) GetDNS(ctx context.Context, in *GetDNSRequest, opts ...g
 	return out, nil
 }
 
-func (c *emitterClient) GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*WhoisRecord, error) {
-	out := new(WhoisRecord)
+func (c *emitterClient) GetWhois(ctx context.Context, in *GetWhoisRequest, opts ...grpc.CallOption) (*GetWhoisResponse, error) {
+	out := new(GetWhoisResponse)
 	err := c.cc.Invoke(ctx, Emitter_GetWhois_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -61,8 +61,8 @@ func (c *emitterClient) GetWhois(ctx context.Context, in *GetWhoisRequest, opts 
 // All implementations must embed UnimplementedEmitterServer
 // for forward compatibility
 type EmitterServer interface {
-	GetDNS(context.Context, *GetDNSRequest) (*ResourceRecords, error)
-	GetWhois(context.Context, *GetWhoisRequest) (*WhoisRecord, error)
+	GetDNS(context.Context, *GetDNSRequest) (*GetDNSResponse, error)
+	GetWhois(context.Context, *GetWhoisRequest) (*GetWhoisResponse, error)
 	mustEmbedUnimplementedEmitterServer()
 }
 
@@ -70,10 +70,10 @@ type EmitterServer interface {
 type UnimplementedEmitterServer struct {
 }
 
-func (UnimplementedEmitterServer) GetDNS(context.Context, *GetDNSRequest) (*ResourceRecords, error) {
+func (UnimplementedEmitterServer) GetDNS(context.Context, *GetDNSRequest) (*GetDNSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDNS not implemented")
 }
-func (UnimplementedEmitterServer) GetWhois(context.Context, *GetWhoisRequest) (*WhoisRecord, error) {
+func (UnimplementedEmitterServer) GetWhois(context.Context, *GetWhoisRequest) (*GetWhoisResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWhois not implemented")
 }
 func (UnimplementedEmitterServer) mustEmbedUnimplementedEmitterServer() {}

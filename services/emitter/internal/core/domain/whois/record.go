@@ -7,6 +7,8 @@ type Record struct {
 	DomainName string
 	// Список DNS-серверов, указанных для домена
 	NameServers []string
+	// Регистратор домена
+	Registrar string
 	// Дата и время регистрации домена в формате UTC
 	Created time.Time
 	// Дата и время окончания срока регистрации домена в формате UTC

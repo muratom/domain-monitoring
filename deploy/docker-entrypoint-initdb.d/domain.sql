@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS registrations (
     domain_id INT NOT NULL,
     created TIMESTAMP NOT NULL,
     paid_till TIMESTAMP NOT NULL,
+    registrar TEXT NOT NULL,
 
     PRIMARY KEY (id),
     FOREIGN KEY (domain_id)
@@ -180,12 +181,13 @@ CREATE TABLE IF NOT EXISTS registrations (
 INSERT INTO registrations (
     domain_id, 
     created, 
-    paid_till
+    paid_till,
+    registrar,
 )
 VALUES
-    (1, '2000-04-12 10:10:10', '2023-12-12 23:00:00'),
-    (2, '2001-03-01 00:00:01', '2023-08-15 20:00:00'),
-    (3, '1999-04-04 12:12:12', '2023-06-20 12:30:00');
+    (1, '2000-04-12 10:10:10', '2023-12-12 23:00:00', 'Alibaba'),
+    (2, '2001-03-01 00:00:01', '2023-08-15 20:00:00', 'Tatar holding'),
+    (3, '1999-04-04 12:12:12', '2023-06-20 12:30:00', 'HAHAHA inc.');
 
 CREATE TABLE IF NOT EXISTS changelogs (
     id INT GENERATED ALWAYS AS IDENTITY,

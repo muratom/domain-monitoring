@@ -38,24 +38,35 @@ message ResourceRecords {
     repeated string TXT = 7;
 }
 
+message GetDNSResponse {
+    GetDNSRequest request = 1;
+    ResourceRecords resource_records = 2;
+}
+
 message GetWhoisRequest {
     string fqdn = 1;
 }
 
-message WhoisRecord {
+message WhoisRecords {
     string domain_name = 1;
     repeated string name_servers = 2;
-    google.protobuf.Timestamp created = 3;
-    google.protobuf.Timestamp paid_till = 4;
+    string registrar = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp paid_till = 5;
+}
+
+message GetWhoisResponse {
+    GetWhoisRequest request = 1;
+    WhoisRecords records = 2;
 }
 
 service Emitter {
-    rpc GetDNS(GetDNSRequest) returns (ResourceRecords) {
+    rpc GetDNS(GetDNSRequest) returns (GetDNSResponse) {
         option (google.api.http) = {
             get: "/v1/dns"
         };
     }
-    rpc GetWhois(GetWhoisRequest) returns (WhoisRecord) {
+    rpc GetWhois(GetWhoisRequest) returns (GetWhoisResponse) {
         option (google.api.http) = {
             get: "/v1/whois"
         };

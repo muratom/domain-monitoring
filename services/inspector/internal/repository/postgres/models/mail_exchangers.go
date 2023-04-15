@@ -101,7 +101,7 @@ var (
 	mailExchangerAllColumns            = []string{"id", "domain_id", "host", "pref"}
 	mailExchangerColumnsWithoutDefault = []string{"domain_id", "host", "pref"}
 	mailExchangerColumnsWithDefault    = []string{"id"}
-	mailExchangerPrimaryKeyColumns     = []string{"id"}
+	mailExchangerPrimaryKeyColumns     = []string{"domain_id", "host"}
 	mailExchangerGeneratedColumns      = []string{"id"}
 )
 
@@ -335,7 +335,7 @@ func (o *MailExchanger) SetDomain(ctx context.Context, exec boil.ContextExecutor
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, mailExchangerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.Host}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -379,7 +379,7 @@ func MailExchangers(mods ...qm.QueryMod) mailExchangerQuery {
 
 // FindMailExchanger retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindMailExchanger(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*MailExchanger, error) {
+func FindMailExchanger(ctx context.Context, exec boil.ContextExecutor, domainID int, host string, selectCols ...string) (*MailExchanger, error) {
 	mailExchangerObj := &MailExchanger{}
 
 	sel := "*"
@@ -387,10 +387,10 @@ func FindMailExchanger(ctx context.Context, exec boil.ContextExecutor, iD int, s
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"mail_exchangers\" where \"id\"=$1", sel,
+		"select %s from \"mail_exchangers\" where \"domain_id\"=$1 AND \"host\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, host)
 
 	err := q.Bind(ctx, exec, mailExchangerObj)
 	if err != nil {
@@ -725,7 +725,7 @@ func (o *MailExchanger) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), mailExchangerPrimaryKeyMapping)
-	sql := "DELETE FROM \"mail_exchangers\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"mail_exchangers\" WHERE \"domain_id\"=$1 AND \"host\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -802,7 +802,7 @@ func (o MailExchangerSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *MailExchanger) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindMailExchanger(ctx, exec, o.ID)
+	ret, err := FindMailExchanger(ctx, exec, o.DomainID, o.Host)
 	if err != nil {
 		return err
 	}
@@ -841,16 +841,16 @@ func (o *MailExchangerSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // MailExchangerExists checks if the MailExchanger row exists.
-func MailExchangerExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func MailExchangerExists(ctx context.Context, exec boil.ContextExecutor, domainID int, host string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"mail_exchangers\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"mail_exchangers\" where \"domain_id\"=$1 AND \"host\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, host)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, host)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -862,5 +862,5 @@ func MailExchangerExists(ctx context.Context, exec boil.ContextExecutor, iD int)
 
 // Exists checks if the MailExchanger row exists.
 func (o *MailExchanger) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return MailExchangerExists(ctx, exec, o.ID)
+	return MailExchangerExists(ctx, exec, o.DomainID, o.Host)
 }

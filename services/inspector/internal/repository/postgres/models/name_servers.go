@@ -94,7 +94,7 @@ var (
 	nameServerAllColumns            = []string{"id", "domain_id", "name_server"}
 	nameServerColumnsWithoutDefault = []string{"domain_id", "name_server"}
 	nameServerColumnsWithDefault    = []string{"id"}
-	nameServerPrimaryKeyColumns     = []string{"id"}
+	nameServerPrimaryKeyColumns     = []string{"domain_id", "name_server"}
 	nameServerGeneratedColumns      = []string{"id"}
 )
 
@@ -328,7 +328,7 @@ func (o *NameServer) SetDomain(ctx context.Context, exec boil.ContextExecutor, i
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, nameServerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.NameServer}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -372,7 +372,7 @@ func NameServers(mods ...qm.QueryMod) nameServerQuery {
 
 // FindNameServer retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindNameServer(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*NameServer, error) {
+func FindNameServer(ctx context.Context, exec boil.ContextExecutor, domainID int, nameServer string, selectCols ...string) (*NameServer, error) {
 	nameServerObj := &NameServer{}
 
 	sel := "*"
@@ -380,10 +380,10 @@ func FindNameServer(ctx context.Context, exec boil.ContextExecutor, iD int, sele
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"name_servers\" where \"id\"=$1", sel,
+		"select %s from \"name_servers\" where \"domain_id\"=$1 AND \"name_server\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, nameServer)
 
 	err := q.Bind(ctx, exec, nameServerObj)
 	if err != nil {
@@ -718,7 +718,7 @@ func (o *NameServer) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), nameServerPrimaryKeyMapping)
-	sql := "DELETE FROM \"name_servers\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"name_servers\" WHERE \"domain_id\"=$1 AND \"name_server\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -795,7 +795,7 @@ func (o NameServerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *NameServer) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindNameServer(ctx, exec, o.ID)
+	ret, err := FindNameServer(ctx, exec, o.DomainID, o.NameServer)
 	if err != nil {
 		return err
 	}
@@ -834,16 +834,16 @@ func (o *NameServerSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 }
 
 // NameServerExists checks if the NameServer row exists.
-func NameServerExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func NameServerExists(ctx context.Context, exec boil.ContextExecutor, domainID int, nameServer string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"name_servers\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"name_servers\" where \"domain_id\"=$1 AND \"name_server\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, nameServer)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, nameServer)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -855,5 +855,5 @@ func NameServerExists(ctx context.Context, exec boil.ContextExecutor, iD int) (b
 
 // Exists checks if the NameServer row exists.
 func (o *NameServer) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return NameServerExists(ctx, exec, o.ID)
+	return NameServerExists(ctx, exec, o.DomainID, o.NameServer)
 }

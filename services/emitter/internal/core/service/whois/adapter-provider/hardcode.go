@@ -29,7 +29,8 @@ func NewHardcodeAdapterProvider(whoisClient adapter.Client, whoisServerProvider 
 }
 
 func (p *HardcodeAdapterProvider) GetAdapterByFQDN(fqdn string) whois.Adapter {
-	sfx := fqdn
+	// Remove root zone
+	sfx := strings.TrimRight(fqdn, ".")
 	for {
 		if a, ok := p.adapterByDomain[sfx]; ok {
 			return a

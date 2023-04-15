@@ -23,51 +23,58 @@ import (
 
 // Registration is an object representing the database table.
 type Registration struct {
-	ID       int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	DomainID int       `boil:"domain_id" json:"domain_id" toml:"domain_id" yaml:"domain_id"`
-	Created  time.Time `boil:"created" json:"created" toml:"created" yaml:"created"`
-	PaidTill time.Time `boil:"paid_till" json:"paid_till" toml:"paid_till" yaml:"paid_till"`
+	ID        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	DomainID  int       `boil:"domain_id" json:"domain_id" toml:"domain_id" yaml:"domain_id"`
+	Created   time.Time `boil:"created" json:"created" toml:"created" yaml:"created"`
+	PaidTill  time.Time `boil:"paid_till" json:"paid_till" toml:"paid_till" yaml:"paid_till"`
+	Registrar string    `boil:"registrar" json:"registrar" toml:"registrar" yaml:"registrar"`
 
 	R *registrationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L registrationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var RegistrationColumns = struct {
-	ID       string
-	DomainID string
-	Created  string
-	PaidTill string
+	ID        string
+	DomainID  string
+	Created   string
+	PaidTill  string
+	Registrar string
 }{
-	ID:       "id",
-	DomainID: "domain_id",
-	Created:  "created",
-	PaidTill: "paid_till",
+	ID:        "id",
+	DomainID:  "domain_id",
+	Created:   "created",
+	PaidTill:  "paid_till",
+	Registrar: "registrar",
 }
 
 var RegistrationTableColumns = struct {
-	ID       string
-	DomainID string
-	Created  string
-	PaidTill string
+	ID        string
+	DomainID  string
+	Created   string
+	PaidTill  string
+	Registrar string
 }{
-	ID:       "registrations.id",
-	DomainID: "registrations.domain_id",
-	Created:  "registrations.created",
-	PaidTill: "registrations.paid_till",
+	ID:        "registrations.id",
+	DomainID:  "registrations.domain_id",
+	Created:   "registrations.created",
+	PaidTill:  "registrations.paid_till",
+	Registrar: "registrations.registrar",
 }
 
 // Generated where
 
 var RegistrationWhere = struct {
-	ID       whereHelperint
-	DomainID whereHelperint
-	Created  whereHelpertime_Time
-	PaidTill whereHelpertime_Time
+	ID        whereHelperint
+	DomainID  whereHelperint
+	Created   whereHelpertime_Time
+	PaidTill  whereHelpertime_Time
+	Registrar whereHelperstring
 }{
-	ID:       whereHelperint{field: "\"registrations\".\"id\""},
-	DomainID: whereHelperint{field: "\"registrations\".\"domain_id\""},
-	Created:  whereHelpertime_Time{field: "\"registrations\".\"created\""},
-	PaidTill: whereHelpertime_Time{field: "\"registrations\".\"paid_till\""},
+	ID:        whereHelperint{field: "\"registrations\".\"id\""},
+	DomainID:  whereHelperint{field: "\"registrations\".\"domain_id\""},
+	Created:   whereHelpertime_Time{field: "\"registrations\".\"created\""},
+	PaidTill:  whereHelpertime_Time{field: "\"registrations\".\"paid_till\""},
+	Registrar: whereHelperstring{field: "\"registrations\".\"registrar\""},
 }
 
 // RegistrationRels is where relationship names are stored.
@@ -98,10 +105,10 @@ func (r *registrationR) GetDomain() *Domain {
 type registrationL struct{}
 
 var (
-	registrationAllColumns            = []string{"id", "domain_id", "created", "paid_till"}
-	registrationColumnsWithoutDefault = []string{"domain_id", "created", "paid_till"}
+	registrationAllColumns            = []string{"id", "domain_id", "created", "paid_till", "registrar"}
+	registrationColumnsWithoutDefault = []string{"domain_id", "created", "paid_till", "registrar"}
 	registrationColumnsWithDefault    = []string{"id"}
-	registrationPrimaryKeyColumns     = []string{"id"}
+	registrationPrimaryKeyColumns     = []string{"domain_id", "created"}
 	registrationGeneratedColumns      = []string{"id"}
 )
 
@@ -335,7 +342,7 @@ func (o *Registration) SetDomain(ctx context.Context, exec boil.ContextExecutor,
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, registrationPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.Created}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -379,7 +386,7 @@ func Registrations(mods ...qm.QueryMod) registrationQuery {
 
 // FindRegistration retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindRegistration(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Registration, error) {
+func FindRegistration(ctx context.Context, exec boil.ContextExecutor, domainID int, created time.Time, selectCols ...string) (*Registration, error) {
 	registrationObj := &Registration{}
 
 	sel := "*"
@@ -387,10 +394,10 @@ func FindRegistration(ctx context.Context, exec boil.ContextExecutor, iD int, se
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"registrations\" where \"id\"=$1", sel,
+		"select %s from \"registrations\" where \"domain_id\"=$1 AND \"created\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, created)
 
 	err := q.Bind(ctx, exec, registrationObj)
 	if err != nil {
@@ -725,7 +732,7 @@ func (o *Registration) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), registrationPrimaryKeyMapping)
-	sql := "DELETE FROM \"registrations\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"registrations\" WHERE \"domain_id\"=$1 AND \"created\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -802,7 +809,7 @@ func (o RegistrationSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Registration) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindRegistration(ctx, exec, o.ID)
+	ret, err := FindRegistration(ctx, exec, o.DomainID, o.Created)
 	if err != nil {
 		return err
 	}
@@ -841,16 +848,16 @@ func (o *RegistrationSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 }
 
 // RegistrationExists checks if the Registration row exists.
-func RegistrationExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func RegistrationExists(ctx context.Context, exec boil.ContextExecutor, domainID int, created time.Time) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"registrations\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"registrations\" where \"domain_id\"=$1 AND \"created\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, created)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, created)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -862,5 +869,5 @@ func RegistrationExists(ctx context.Context, exec boil.ContextExecutor, iD int) 
 
 // Exists checks if the Registration row exists.
 func (o *Registration) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return RegistrationExists(ctx, exec, o.ID)
+	return RegistrationExists(ctx, exec, o.DomainID, o.Created)
 }

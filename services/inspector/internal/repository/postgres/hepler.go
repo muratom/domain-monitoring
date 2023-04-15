@@ -25,11 +25,12 @@ func (r *DomainRepository) prepareDomainEntry(ctx context.Context, fqdn string) 
 	).One(ctx, r.Conn)
 }
 
-func insertWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
+func addWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
 	whoisRecord := &models.Registration{
-		DomainID: dbDomain.ID,
-		Created:  domain.WHOIS.Created,
-		PaidTill: domain.WHOIS.PaidTill,
+		DomainID:  dbDomain.ID,
+		Created:   domain.WHOIS.Created,
+		PaidTill:  domain.WHOIS.PaidTill,
+		Registrar: domain.WHOIS.Registrar,
 	}
 	err := dbDomain.AddRegistrations(ctx, tx, true, whoisRecord)
 	if err != nil {
@@ -42,38 +43,38 @@ func insertWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain
 	return nil
 }
 
-func insertDNS(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
-	err := insertIPv4(ctx, tx, dbDomain, domain.DNS.A)
+func addDNS(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
+	err := addIPv4(ctx, tx, dbDomain, domain.DNS.A)
 	if err != nil {
 		return err
 	}
 
-	err = insertIPv6(ctx, tx, dbDomain, domain.DNS.AAAA)
+	err = addIPv6(ctx, tx, dbDomain, domain.DNS.AAAA)
 	if err != nil {
 		return err
 	}
 
-	err = insertCNAME(ctx, tx, dbDomain, domain.DNS.CNAME)
+	err = addCNAME(ctx, tx, dbDomain, domain.DNS.CNAME)
 	if err != nil {
 		return err
 	}
 
-	err = insertMX(ctx, tx, dbDomain, domain.DNS.MX)
+	err = addMX(ctx, tx, dbDomain, domain.DNS.MX)
 	if err != nil {
 		return err
 	}
 
-	err = insertNS(ctx, tx, dbDomain, domain.DNS.NS)
+	err = addNS(ctx, tx, dbDomain, domain.DNS.NS)
 	if err != nil {
 		return err
 	}
 
-	err = insertSRV(ctx, tx, dbDomain, domain.DNS.SRV)
+	err = addSRV(ctx, tx, dbDomain, domain.DNS.SRV)
 	if err != nil {
 		return err
 	}
 
-	err = insertTXT(ctx, tx, dbDomain, domain.DNS.TXT)
+	err = addTXT(ctx, tx, dbDomain, domain.DNS.TXT)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func insertDNS(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *
 	return nil
 }
 
-func insertIPv4(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []string) error {
+func addIPv4(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []string) error {
 	bulkIPv4 := make([]*models.Ipv4Address, len(ips))
 	for i, ip := range ips {
 		bulkIPv4[i] = &models.Ipv4Address{
@@ -100,7 +101,7 @@ func insertIPv4(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []str
 	return nil
 }
 
-func insertIPv6(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []string) error {
+func addIPv6(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []string) error {
 	bulkIPv6 := make([]*models.Ipv6Address, len(ips))
 	for i, ip := range ips {
 		bulkIPv6[i] = &models.Ipv6Address{
@@ -119,7 +120,7 @@ func insertIPv6(ctx context.Context, tx *sql.Tx, domain models.Domain, ips []str
 	return nil
 }
 
-func insertCNAME(ctx context.Context, tx *sql.Tx, domain models.Domain, cname string) error {
+func addCNAME(ctx context.Context, tx *sql.Tx, domain models.Domain, cname string) error {
 	canonicalName := &models.CanonicalName{
 		DomainID:      domain.ID,
 		CanonicalName: cname,
@@ -135,7 +136,7 @@ func insertCNAME(ctx context.Context, tx *sql.Tx, domain models.Domain, cname st
 	return nil
 }
 
-func insertMX(ctx context.Context, tx *sql.Tx, domain models.Domain, mxs []dns.MX) error {
+func addMX(ctx context.Context, tx *sql.Tx, domain models.Domain, mxs []dns.MX) error {
 	bulkMX := make([]*models.MailExchanger, len(mxs))
 	for i, mx := range mxs {
 		bulkMX[i] = &models.MailExchanger{
@@ -155,7 +156,7 @@ func insertMX(ctx context.Context, tx *sql.Tx, domain models.Domain, mxs []dns.M
 	return nil
 }
 
-func insertNS(ctx context.Context, tx *sql.Tx, domain models.Domain, nss []dns.NS) error {
+func addNS(ctx context.Context, tx *sql.Tx, domain models.Domain, nss []dns.NS) error {
 	bulkNS := make([]*models.NameServer, len(nss))
 	for i, ns := range nss {
 		bulkNS[i] = &models.NameServer{
@@ -174,7 +175,7 @@ func insertNS(ctx context.Context, tx *sql.Tx, domain models.Domain, nss []dns.N
 	return nil
 }
 
-func insertSRV(ctx context.Context, tx *sql.Tx, domain models.Domain, srvs []dns.SRV) error {
+func addSRV(ctx context.Context, tx *sql.Tx, domain models.Domain, srvs []dns.SRV) error {
 	bulkSRV := make([]*models.ServerSelection, len(srvs))
 	for i, srv := range srvs {
 		bulkSRV[i] = &models.ServerSelection{
@@ -196,7 +197,7 @@ func insertSRV(ctx context.Context, tx *sql.Tx, domain models.Domain, srvs []dns
 	return nil
 }
 
-func insertTXT(ctx context.Context, tx *sql.Tx, domain models.Domain, txts []string) error {
+func addTXT(ctx context.Context, tx *sql.Tx, domain models.Domain, txts []string) error {
 	bulkTXT := make([]*models.TextString, len(txts))
 	for i, txt := range txts {
 		bulkTXT[i] = &models.TextString{
@@ -212,5 +213,42 @@ func insertTXT(ctx context.Context, tx *sql.Tx, domain models.Domain, txts []str
 		}
 		return fmt.Errorf("failed to insert TXT addresses into DB: %w", err)
 	}
+	return nil
+}
+
+func deleteRelatedEntries(ctx context.Context, tx *sql.Tx, domainEntry models.Domain) error {
+	_, err := domainEntry.R.Ipv4Addresses.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete IPv4 entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.Ipv6Addresses.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete IPv6 entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.CanonicalNames.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete CNAME entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.MailExchangers.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete MX entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.NameServers.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete NS entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.Registrations.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete WHOIS entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.ServerSelections.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete SRV entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+	_, err = domainEntry.R.TextStrings.DeleteAll(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("unable to delete TXT entries for FQDN (%v): %w", domainEntry.FQDN, err)
+	}
+
 	return nil
 }

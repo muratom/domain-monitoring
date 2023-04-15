@@ -140,7 +140,7 @@ var (
 	canonicalNameAllColumns            = []string{"id", "domain_id", "canonical_name"}
 	canonicalNameColumnsWithoutDefault = []string{"domain_id", "canonical_name"}
 	canonicalNameColumnsWithDefault    = []string{"id"}
-	canonicalNamePrimaryKeyColumns     = []string{"id"}
+	canonicalNamePrimaryKeyColumns     = []string{"domain_id", "canonical_name"}
 	canonicalNameGeneratedColumns      = []string{"id"}
 )
 
@@ -374,7 +374,7 @@ func (o *CanonicalName) SetDomain(ctx context.Context, exec boil.ContextExecutor
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, canonicalNamePrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.CanonicalName}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -418,7 +418,7 @@ func CanonicalNames(mods ...qm.QueryMod) canonicalNameQuery {
 
 // FindCanonicalName retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCanonicalName(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*CanonicalName, error) {
+func FindCanonicalName(ctx context.Context, exec boil.ContextExecutor, domainID int, canonicalName string, selectCols ...string) (*CanonicalName, error) {
 	canonicalNameObj := &CanonicalName{}
 
 	sel := "*"
@@ -426,10 +426,10 @@ func FindCanonicalName(ctx context.Context, exec boil.ContextExecutor, iD int, s
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"canonical_names\" where \"id\"=$1", sel,
+		"select %s from \"canonical_names\" where \"domain_id\"=$1 AND \"canonical_name\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, canonicalName)
 
 	err := q.Bind(ctx, exec, canonicalNameObj)
 	if err != nil {
@@ -764,7 +764,7 @@ func (o *CanonicalName) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), canonicalNamePrimaryKeyMapping)
-	sql := "DELETE FROM \"canonical_names\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"canonical_names\" WHERE \"domain_id\"=$1 AND \"canonical_name\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -841,7 +841,7 @@ func (o CanonicalNameSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *CanonicalName) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindCanonicalName(ctx, exec, o.ID)
+	ret, err := FindCanonicalName(ctx, exec, o.DomainID, o.CanonicalName)
 	if err != nil {
 		return err
 	}
@@ -880,16 +880,16 @@ func (o *CanonicalNameSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // CanonicalNameExists checks if the CanonicalName row exists.
-func CanonicalNameExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func CanonicalNameExists(ctx context.Context, exec boil.ContextExecutor, domainID int, canonicalName string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"canonical_names\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"canonical_names\" where \"domain_id\"=$1 AND \"canonical_name\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, canonicalName)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, canonicalName)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -901,5 +901,5 @@ func CanonicalNameExists(ctx context.Context, exec boil.ContextExecutor, iD int)
 
 // Exists checks if the CanonicalName row exists.
 func (o *CanonicalName) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return CanonicalNameExists(ctx, exec, o.ID)
+	return CanonicalNameExists(ctx, exec, o.DomainID, o.CanonicalName)
 }

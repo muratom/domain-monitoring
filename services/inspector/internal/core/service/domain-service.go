@@ -57,7 +57,7 @@ func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) error {
 		return fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
-	err = s.domainRepository.Store(ctx, domain)
+	err = s.domainRepository.Update(ctx, domain, fqdn)
 	if err != nil {
 		return fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
 	}
@@ -128,7 +128,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 					NameServerHost: res.request.DNSServerHost,
 				})
 			} else {
-				return nil, fmt.Errorf("error making DNS request to NS %v for FQDN %v: %w", res.request.DNSServerHost, res.request.DNSServerHost, err)
+				return nil, fmt.Errorf("error making DNS request to NS %v for FQDN %v: %w", res.request.DNSServerHost, res.request.FQDN, res.err)
 			}
 		}
 		responses = append(responses, *res.response)
@@ -140,7 +140,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 
 	ok, notSychronizedDNSServers := s.isDNSServersSync(responses)
 	if !ok {
-		logrus.Errorf("DomainService.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
+		logrus.Warnf("DomainService.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
 		notifications = append(notifications, &entity.NameServersNotSynchronizedNotification{
 			FQDN:                       fqdn,
 			NotSynchronizedNameServers: notSychronizedDNSServers,
@@ -157,7 +157,7 @@ func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string
 		return nil, fmt.Errorf("error getting registration information: %w", err)
 	}
 
-	notifications := make([]entity.Notification, 2)
+	notifications := make([]entity.Notification, 0, 2)
 
 	expiringSoonTimestamp := whoisResp.Records.PaidTill.Add(-expiringDomainThreshold)
 	if time.Now().After(expiringSoonTimestamp) {
@@ -237,6 +237,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 		WHOIS: whois.Records{
 			DomainName:  whoisRecords.Records.DomainName,
 			NameServers: whoisRecords.Records.NameServers,
+			Registrar:   whoisRecords.Records.Registrar,
 			Created:     whoisRecords.Records.Created,
 			PaidTill:    whoisRecords.Records.PaidTill,
 		},

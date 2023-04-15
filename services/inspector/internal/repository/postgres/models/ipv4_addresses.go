@@ -94,7 +94,7 @@ var (
 	ipv4AddressAllColumns            = []string{"id", "domain_id", "ip"}
 	ipv4AddressColumnsWithoutDefault = []string{"domain_id", "ip"}
 	ipv4AddressColumnsWithDefault    = []string{"id"}
-	ipv4AddressPrimaryKeyColumns     = []string{"id"}
+	ipv4AddressPrimaryKeyColumns     = []string{"domain_id", "ip"}
 	ipv4AddressGeneratedColumns      = []string{"id"}
 )
 
@@ -328,7 +328,7 @@ func (o *Ipv4Address) SetDomain(ctx context.Context, exec boil.ContextExecutor, 
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, ipv4AddressPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.IP}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -372,7 +372,7 @@ func Ipv4Addresses(mods ...qm.QueryMod) ipv4AddressQuery {
 
 // FindIpv4Address retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindIpv4Address(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Ipv4Address, error) {
+func FindIpv4Address(ctx context.Context, exec boil.ContextExecutor, domainID int, iP string, selectCols ...string) (*Ipv4Address, error) {
 	ipv4AddressObj := &Ipv4Address{}
 
 	sel := "*"
@@ -380,10 +380,10 @@ func FindIpv4Address(ctx context.Context, exec boil.ContextExecutor, iD int, sel
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"ipv4_addresses\" where \"id\"=$1", sel,
+		"select %s from \"ipv4_addresses\" where \"domain_id\"=$1 AND \"ip\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, iP)
 
 	err := q.Bind(ctx, exec, ipv4AddressObj)
 	if err != nil {
@@ -718,7 +718,7 @@ func (o *Ipv4Address) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), ipv4AddressPrimaryKeyMapping)
-	sql := "DELETE FROM \"ipv4_addresses\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"ipv4_addresses\" WHERE \"domain_id\"=$1 AND \"ip\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -795,7 +795,7 @@ func (o Ipv4AddressSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Ipv4Address) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindIpv4Address(ctx, exec, o.ID)
+	ret, err := FindIpv4Address(ctx, exec, o.DomainID, o.IP)
 	if err != nil {
 		return err
 	}
@@ -834,16 +834,16 @@ func (o *Ipv4AddressSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // Ipv4AddressExists checks if the Ipv4Address row exists.
-func Ipv4AddressExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func Ipv4AddressExists(ctx context.Context, exec boil.ContextExecutor, domainID int, iP string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"ipv4_addresses\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"ipv4_addresses\" where \"domain_id\"=$1 AND \"ip\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, iP)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, iP)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -855,5 +855,5 @@ func Ipv4AddressExists(ctx context.Context, exec boil.ContextExecutor, iD int) (
 
 // Exists checks if the Ipv4Address row exists.
 func (o *Ipv4Address) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return Ipv4AddressExists(ctx, exec, o.ID)
+	return Ipv4AddressExists(ctx, exec, o.DomainID, o.IP)
 }

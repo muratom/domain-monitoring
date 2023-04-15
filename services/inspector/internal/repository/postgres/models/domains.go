@@ -1383,7 +1383,7 @@ func (o *Domain) AddCanonicalNames(ctx context.Context, exec boil.ContextExecuto
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, canonicalNamePrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.CanonicalName}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1489,7 +1489,7 @@ func (o *Domain) AddIpv4Addresses(ctx context.Context, exec boil.ContextExecutor
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, ipv4AddressPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.IP}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1542,7 +1542,7 @@ func (o *Domain) AddIpv6Addresses(ctx context.Context, exec boil.ContextExecutor
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, ipv6AddressPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.IP}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1595,7 +1595,7 @@ func (o *Domain) AddMailExchangers(ctx context.Context, exec boil.ContextExecuto
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, mailExchangerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.Host}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1648,7 +1648,7 @@ func (o *Domain) AddNameServers(ctx context.Context, exec boil.ContextExecutor, 
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, nameServerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.NameServer}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1701,7 +1701,7 @@ func (o *Domain) AddRegistrations(ctx context.Context, exec boil.ContextExecutor
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, registrationPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.Created}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1754,7 +1754,7 @@ func (o *Domain) AddServerSelections(ctx context.Context, exec boil.ContextExecu
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, serverSelectionPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.Target, rel.Port}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1807,7 +1807,7 @@ func (o *Domain) AddTextStrings(ctx context.Context, exec boil.ContextExecutor, 
 				strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 				strmangle.WhereClause("\"", "\"", 2, textStringPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ID}
+			values := []interface{}{o.ID, rel.DomainID, rel.Text}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)

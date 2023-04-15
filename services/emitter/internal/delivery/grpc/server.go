@@ -122,6 +122,7 @@ func (e *EmitterServer) GetWhois(ctx context.Context, req *pb.GetWhoisRequest) (
 		Records: &pb.WhoisRecords{
 			DomainName:  whoisRecord.DomainName,
 			NameServers: whoisRecord.NameServers,
+			Registrar:   whoisRecord.Registrar,
 			Created:     timestamppb.New(whoisRecord.Created),
 			PaidTill:    timestamppb.New(whoisRecord.PaidTill),
 		},

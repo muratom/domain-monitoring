@@ -115,7 +115,7 @@ var (
 	serverSelectionAllColumns            = []string{"id", "domain_id", "target", "port", "priority", "weight"}
 	serverSelectionColumnsWithoutDefault = []string{"domain_id", "target", "port", "priority", "weight"}
 	serverSelectionColumnsWithDefault    = []string{"id"}
-	serverSelectionPrimaryKeyColumns     = []string{"id"}
+	serverSelectionPrimaryKeyColumns     = []string{"domain_id", "target", "port"}
 	serverSelectionGeneratedColumns      = []string{"id"}
 )
 
@@ -349,7 +349,7 @@ func (o *ServerSelection) SetDomain(ctx context.Context, exec boil.ContextExecut
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, serverSelectionPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.Target, o.Port}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -393,7 +393,7 @@ func ServerSelections(mods ...qm.QueryMod) serverSelectionQuery {
 
 // FindServerSelection retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindServerSelection(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*ServerSelection, error) {
+func FindServerSelection(ctx context.Context, exec boil.ContextExecutor, domainID int, target string, port int, selectCols ...string) (*ServerSelection, error) {
 	serverSelectionObj := &ServerSelection{}
 
 	sel := "*"
@@ -401,10 +401,10 @@ func FindServerSelection(ctx context.Context, exec boil.ContextExecutor, iD int,
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"server_selections\" where \"id\"=$1", sel,
+		"select %s from \"server_selections\" where \"domain_id\"=$1 AND \"target\"=$2 AND \"port\"=$3", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, target, port)
 
 	err := q.Bind(ctx, exec, serverSelectionObj)
 	if err != nil {
@@ -739,7 +739,7 @@ func (o *ServerSelection) Delete(ctx context.Context, exec boil.ContextExecutor)
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), serverSelectionPrimaryKeyMapping)
-	sql := "DELETE FROM \"server_selections\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"server_selections\" WHERE \"domain_id\"=$1 AND \"target\"=$2 AND \"port\"=$3"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -816,7 +816,7 @@ func (o ServerSelectionSlice) DeleteAll(ctx context.Context, exec boil.ContextEx
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *ServerSelection) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindServerSelection(ctx, exec, o.ID)
+	ret, err := FindServerSelection(ctx, exec, o.DomainID, o.Target, o.Port)
 	if err != nil {
 		return err
 	}
@@ -855,16 +855,16 @@ func (o *ServerSelectionSlice) ReloadAll(ctx context.Context, exec boil.ContextE
 }
 
 // ServerSelectionExists checks if the ServerSelection row exists.
-func ServerSelectionExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func ServerSelectionExists(ctx context.Context, exec boil.ContextExecutor, domainID int, target string, port int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"server_selections\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"server_selections\" where \"domain_id\"=$1 AND \"target\"=$2 AND \"port\"=$3 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, target, port)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, target, port)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -876,5 +876,5 @@ func ServerSelectionExists(ctx context.Context, exec boil.ContextExecutor, iD in
 
 // Exists checks if the ServerSelection row exists.
 func (o *ServerSelection) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return ServerSelectionExists(ctx, exec, o.ID)
+	return ServerSelectionExists(ctx, exec, o.DomainID, o.Target, o.Port)
 }

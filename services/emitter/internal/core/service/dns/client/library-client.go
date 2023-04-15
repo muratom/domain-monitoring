@@ -33,7 +33,7 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 				// TODO: set from config
 				Timeout: defaultConnectionTimeout,
 			}
-			return d.DialContext(ctx, network, lookupParams.DNSServerHost)
+			return d.DialContext(ctx, network, fmt.Sprintf("%v:53", lookupParams.DNSServerHost))
 		}
 	}
 

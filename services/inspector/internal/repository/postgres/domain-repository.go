@@ -7,33 +7,27 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/groupcache/lru"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres/models"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // TODO: split this file in multiple parts
 type DomainRepository struct {
-	cache *lru.Cache
-	Conn  *sql.DB
+	Conn *sql.DB
 }
 
-func NewDomainRepository(dbConnection *sql.DB, cacheSize int) *DomainRepository {
+func NewDomainRepository(dbConnection *sql.DB) *DomainRepository {
 	return &DomainRepository{
-		Conn:  dbConnection,
-		cache: lru.New(cacheSize),
+		Conn: dbConnection,
 	}
 }
 
 func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.Domain, error) {
-	if v, ok := r.cache.Get(fqdn); ok {
-		return v.(*entity.Domain), nil
-	}
-
 	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", fqdn, err)
@@ -49,7 +43,10 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		ip6[i] = ip.IP
 	}
 
-	canonicalName := domainEntry.R.CanonicalNames[0]
+	var canonicalName models.CanonicalName
+	if len(domainEntry.R.CanonicalNames) > 0 {
+		canonicalName = *domainEntry.R.CanonicalNames[0]
+	}
 
 	mx := make([]dns.MX, len(domainEntry.R.MailExchangers))
 	for i, m := range domainEntry.R.MailExchangers {
@@ -81,7 +78,10 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		txt[i] = t.Text
 	}
 
-	whoisInfo := domainEntry.R.Registrations[0]
+	var whoisInfo models.Registration
+	if len(domainEntry.R.Registrations) > 0 {
+		whoisInfo = *domainEntry.R.Registrations[0]
+	}
 
 	result := &entity.Domain{
 		FQDN: domainEntry.FQDN,
@@ -101,8 +101,6 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 			TXT:   txt,
 		},
 	}
-
-	r.cache.Add(fqdn, result)
 
 	return result, nil
 }
@@ -129,7 +127,7 @@ func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) err
 		UpdateDelay: "1W", // TODO: move to function parameters
 	}
 
-	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadUncommitted})
+	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -143,12 +141,57 @@ func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) err
 		return fmt.Errorf("failed to insert Domain into DB: %w", err)
 	}
 
-	err = insertDNS(ctx, tx, domainEntry, domain)
+	err = addDNS(ctx, tx, domainEntry, domain)
 	if err != nil {
 		return err
 	}
 
-	err = insertWhois(ctx, tx, domainEntry, domain)
+	err = addWhois(ctx, tx, domainEntry, domain)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("rollback of the transaction was failed: %w", rollbackErr)
+		}
+		return fmt.Errorf("commit of the transcation failed: %w", err)
+	}
+
+	return nil
+}
+
+func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, storedFQDN string) error {
+	// Domain's FQDN may have changed
+	domainEntry, err := r.prepareDomainEntry(ctx, storedFQDN)
+	if err != nil {
+		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", storedFQDN, err)
+	}
+
+	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	err = deleteRelatedEntries(ctx, tx, *domainEntry)
+	if err != nil {
+		return fmt.Errorf("failed to delete related entries: %w", err)
+	}
+
+	rowsUpdated, err := domainEntry.Update(ctx, tx, boil.Infer())
+	if err != nil {
+		return fmt.Errorf("failed to update domain entry: %w", err)
+	}
+	logrus.Infof("%v rows updated for FQDN (%v)", rowsUpdated, storedFQDN)
+
+	err = addDNS(ctx, tx, *domainEntry, domain)
+	if err != nil {
+		return err
+	}
+
+	err = addWhois(ctx, tx, *domainEntry, domain)
 	if err != nil {
 		return err
 	}

@@ -94,5 +94,6 @@ type DomainRepository interface {
 	GetByFQDN(ctx context.Context, fqdn string) (*Domain, error)
 	GetRottenDomainsFQDN(ctx context.Context) ([]string, error)
 	Store(ctx context.Context, domain *Domain) error
+	Update(ctx context.Context, domain *Domain, storedFQDN string) error
 	SaveChangelog(ctx context.Context, fqdn string, changelog *Changelog) error
 }

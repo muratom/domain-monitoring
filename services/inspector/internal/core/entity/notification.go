@@ -63,6 +63,8 @@ type ResourceRecordChangedNotification struct {
 }
 
 func (n *ResourceRecordChangedNotification) AsHumanReadable() string {
+	n.From = nilToEmpty(n.From)
+	n.To = nilToEmpty(n.To)
 	return fmt.Sprintf(
 		"A DNS resource record %v for a domain %v has changed from %v to %v",
 		n.RecordType, n.FQDN, n.From, n.To,
@@ -77,6 +79,8 @@ type RegistrationInfoChangedNotification struct {
 }
 
 func (n *RegistrationInfoChangedNotification) AsHumanReadable() string {
+	n.From = nilToEmpty(n.From)
+	n.To = nilToEmpty(n.To)
 	return fmt.Sprintf(
 		"A domain %v registration information (%v) has changed from %v to %v",
 		n.FQDN, n.Path, n.From, n.To,
@@ -105,4 +109,11 @@ func (n *NameServersNotSynchronizedNotification) AsHumanReadable() string {
 		"Name servers %v not synchronized for a domain %v",
 		n.NotSynchronizedNameServers, n.FQDN,
 	)
+}
+
+func nilToEmpty(v interface{}) interface{} {
+	if v == nil {
+		return "<empty>"
+	}
+	return v
 }

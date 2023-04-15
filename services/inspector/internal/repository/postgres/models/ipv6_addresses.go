@@ -94,7 +94,7 @@ var (
 	ipv6AddressAllColumns            = []string{"id", "domain_id", "ip"}
 	ipv6AddressColumnsWithoutDefault = []string{"domain_id", "ip"}
 	ipv6AddressColumnsWithDefault    = []string{"id"}
-	ipv6AddressPrimaryKeyColumns     = []string{"id"}
+	ipv6AddressPrimaryKeyColumns     = []string{"domain_id", "ip"}
 	ipv6AddressGeneratedColumns      = []string{"id"}
 )
 
@@ -328,7 +328,7 @@ func (o *Ipv6Address) SetDomain(ctx context.Context, exec boil.ContextExecutor, 
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, ipv6AddressPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.IP}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -372,7 +372,7 @@ func Ipv6Addresses(mods ...qm.QueryMod) ipv6AddressQuery {
 
 // FindIpv6Address retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindIpv6Address(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Ipv6Address, error) {
+func FindIpv6Address(ctx context.Context, exec boil.ContextExecutor, domainID int, iP string, selectCols ...string) (*Ipv6Address, error) {
 	ipv6AddressObj := &Ipv6Address{}
 
 	sel := "*"
@@ -380,10 +380,10 @@ func FindIpv6Address(ctx context.Context, exec boil.ContextExecutor, iD int, sel
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"ipv6_addresses\" where \"id\"=$1", sel,
+		"select %s from \"ipv6_addresses\" where \"domain_id\"=$1 AND \"ip\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, iP)
 
 	err := q.Bind(ctx, exec, ipv6AddressObj)
 	if err != nil {
@@ -718,7 +718,7 @@ func (o *Ipv6Address) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), ipv6AddressPrimaryKeyMapping)
-	sql := "DELETE FROM \"ipv6_addresses\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"ipv6_addresses\" WHERE \"domain_id\"=$1 AND \"ip\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -795,7 +795,7 @@ func (o Ipv6AddressSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Ipv6Address) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindIpv6Address(ctx, exec, o.ID)
+	ret, err := FindIpv6Address(ctx, exec, o.DomainID, o.IP)
 	if err != nil {
 		return err
 	}
@@ -834,16 +834,16 @@ func (o *Ipv6AddressSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // Ipv6AddressExists checks if the Ipv6Address row exists.
-func Ipv6AddressExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func Ipv6AddressExists(ctx context.Context, exec boil.ContextExecutor, domainID int, iP string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"ipv6_addresses\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"ipv6_addresses\" where \"domain_id\"=$1 AND \"ip\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, iP)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, iP)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -855,5 +855,5 @@ func Ipv6AddressExists(ctx context.Context, exec boil.ContextExecutor, iD int) (
 
 // Exists checks if the Ipv6Address row exists.
 func (o *Ipv6Address) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return Ipv6AddressExists(ctx, exec, o.ID)
+	return Ipv6AddressExists(ctx, exec, o.DomainID, o.IP)
 }

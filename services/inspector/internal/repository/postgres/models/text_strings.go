@@ -94,7 +94,7 @@ var (
 	textStringAllColumns            = []string{"id", "domain_id", "text"}
 	textStringColumnsWithoutDefault = []string{"domain_id", "text"}
 	textStringColumnsWithDefault    = []string{"id"}
-	textStringPrimaryKeyColumns     = []string{"id"}
+	textStringPrimaryKeyColumns     = []string{"domain_id", "text"}
 	textStringGeneratedColumns      = []string{"id"}
 )
 
@@ -328,7 +328,7 @@ func (o *TextString) SetDomain(ctx context.Context, exec boil.ContextExecutor, i
 		strmangle.SetParamNames("\"", "\"", 1, []string{"domain_id"}),
 		strmangle.WhereClause("\"", "\"", 2, textStringPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.DomainID, o.Text}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -372,7 +372,7 @@ func TextStrings(mods ...qm.QueryMod) textStringQuery {
 
 // FindTextString retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTextString(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*TextString, error) {
+func FindTextString(ctx context.Context, exec boil.ContextExecutor, domainID int, text string, selectCols ...string) (*TextString, error) {
 	textStringObj := &TextString{}
 
 	sel := "*"
@@ -380,10 +380,10 @@ func FindTextString(ctx context.Context, exec boil.ContextExecutor, iD int, sele
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"text_strings\" where \"id\"=$1", sel,
+		"select %s from \"text_strings\" where \"domain_id\"=$1 AND \"text\"=$2", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, domainID, text)
 
 	err := q.Bind(ctx, exec, textStringObj)
 	if err != nil {
@@ -718,7 +718,7 @@ func (o *TextString) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), textStringPrimaryKeyMapping)
-	sql := "DELETE FROM \"text_strings\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"text_strings\" WHERE \"domain_id\"=$1 AND \"text\"=$2"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -795,7 +795,7 @@ func (o TextStringSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *TextString) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindTextString(ctx, exec, o.ID)
+	ret, err := FindTextString(ctx, exec, o.DomainID, o.Text)
 	if err != nil {
 		return err
 	}
@@ -834,16 +834,16 @@ func (o *TextStringSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 }
 
 // TextStringExists checks if the TextString row exists.
-func TextStringExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+func TextStringExists(ctx context.Context, exec boil.ContextExecutor, domainID int, text string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"text_strings\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"text_strings\" where \"domain_id\"=$1 AND \"text\"=$2 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, domainID, text)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, domainID, text)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -855,5 +855,5 @@ func TextStringExists(ctx context.Context, exec boil.ContextExecutor, iD int) (b
 
 // Exists checks if the TextString row exists.
 func (o *TextString) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return TextStringExists(ctx, exec, o.ID)
+	return TextStringExists(ctx, exec, o.DomainID, o.Text)
 }

@@ -13,14 +13,14 @@ INSERT INTO domains (
 )
 VALUES
     ('yandex.ru.', '2023-04-13 10:10:10', '1 day'),
-    ('ozon.ru.', '2023-03-01 00:00:01', '1 day'),
-    ('mail.ru.', '2023-04-04 12:12:12', '1 day');
+    ('ozon.ru.', '2023-04-10 00:00:01', '2 week'),
+    ('mail.ru.', '2023-04-07 12:12:12', '2 week');
 
 CREATE TABLE IF NOT EXISTS ipv4_addresses (
     id INT GENERATED ALWAYS AS IDENTITY,
     domain_id INT NOT NULL,
     ip VARCHAR(20) NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, ip),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS ipv6_addresses (
     id INT GENERATED ALWAYS AS IDENTITY,
     domain_id INT NOT NULL,
     ip VARCHAR(50) NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, ip),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS canonical_names (
     id INT GENERATED ALWAYS AS IDENTITY,
     domain_id INT NOT NULL,
     canonical_name TEXT NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, canonical_name),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS mail_exchangers (
     domain_id INT NOT NULL,
     host TEXT NOT NULL,
     pref INT NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, host),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS name_servers (
     id INT GENERATED ALWAYS AS IDENTITY,
     domain_id INT NOT NULL,
     name_server TEXT NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, name_server),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -115,9 +115,9 @@ INSERT INTO name_servers (
 VALUES
     (1, 'ns1.yandex.ru'),
     (1, 'ns2.yandex.ru'),
-    (2, 'ns1.mail.ru'),
-    (2, 'ns2.mail.ru'),
-    (3, 'ns8-l2.nic.ru');
+    (3, 'ns1.mail.ru'),
+    (3, 'ns2.mail.ru'),
+    (2, 'ns8-l2.nic.ru');
 
 CREATE TABLE IF NOT EXISTS server_selections (
     id INT GENERATED ALWAYS AS IDENTITY,
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS server_selections (
     port INT NOT NULL,
     priority INT NOT NULL,
     weight INT NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, target, port),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS text_strings (
     id INT GENERATED ALWAYS AS IDENTITY,
     domain_id INT NOT NULL,
     text TEXT NOT NULL,
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, text),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS registrations (
     paid_till TIMESTAMP NOT NULL,
     registrar TEXT NOT NULL,
 
-    PRIMARY KEY (id),
+    PRIMARY KEY (domain_id, created),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
         ON DELETE CASCADE
@@ -182,7 +182,7 @@ INSERT INTO registrations (
     domain_id, 
     created, 
     paid_till,
-    registrar,
+    registrar
 )
 VALUES
     (1, '2000-04-12 10:10:10', '2023-12-12 23:00:00', 'Alibaba'),
@@ -198,8 +198,7 @@ CREATE TABLE IF NOT EXISTS changelogs (
     PRIMARY KEY (id),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+        ON DELETE NO ACTION
 );
 
 INSERT INTO changelogs (

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.6.1
-// source: emitter/emitter.proto
+// source: emitter.proto
 
 package emitter
 
@@ -142,5 +142,5 @@ var Emitter_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "emitter/emitter.proto",
+	Metadata: "emitter.proto",
 }

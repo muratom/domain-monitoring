@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
+	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"

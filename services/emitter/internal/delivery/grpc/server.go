@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
+	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	pb "github.com/muratom/domain-monitoring/services/emitter/api/proto/gen/go/emitter"
+	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
 	dnsclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns/client"
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"

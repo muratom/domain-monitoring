@@ -13,6 +13,12 @@ type Notification interface {
 	AsHumanReadable() string
 }
 
+type TempNotification struct{}
+
+func (n *TempNotification) AsHumanReadable() string {
+	return "Hello"
+}
+
 type RegistrationExpireSoonNotification struct {
 	FQDN      string
 	Registrar string

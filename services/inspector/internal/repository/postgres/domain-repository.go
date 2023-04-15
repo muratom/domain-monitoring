@@ -170,7 +170,7 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", storedFQDN, err)
 	}
 
-	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

@@ -23,7 +23,7 @@ func main() {
 		logrus.Fatalf("unable to connect to the emitter: %v", err)
 	}
 	logrus.Infof("successfully connect to an emitter")
-	emitterCLient := emitterclient.NewGrpcEmitterClient(conn, 3*time.Second)
+	emitterClient := emitterclient.NewGrpcEmitterClient(conn, 3*time.Second)
 
 	dbConn, err := sql.Open("postgres", "host=localhost port=5432 dbname=domain user=user sslmode=disable password=root")
 	if err != nil {
@@ -32,7 +32,13 @@ func main() {
 	logrus.Infof("successfully connect to a database")
 	repo := postgres.NewDomainRepository(dbConn)
 
-	domainService := service.NewDomainService([]service.EmitterClient{emitterCLient}, repo)
+	domainService := service.NewDomainService([]service.EmitterClient{emitterClient}, repo)
+
+	// mailNotifier := service.NewMailNotifier("<from>", "<to>", "<username>", "<password>", "<smtp_host>", 42)
+	stdoutNotifier := &service.StdoutNotifier{}
+	notifiers := []service.Notifier{
+		stdoutNotifier,
+	}
 
 	ticker := time.After(2 * time.Second)
 	go func() {
@@ -71,8 +77,8 @@ func main() {
 					}
 				}
 
-				for _, notification := range notifications {
-					logrus.Infof("notification: %v", notification.AsHumanReadable())
+				for _, notifier := range notifiers {
+					notifier.Notify(notifications)
 				}
 			case <-ctx.Done():
 				logrus.Infof("ticker is stopping...")

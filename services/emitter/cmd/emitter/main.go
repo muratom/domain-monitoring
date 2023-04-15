@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", "0.0.0.0:8080")
 	if err != nil {
 		log.Fatalln("failed to listen:", err)
 	}
@@ -51,7 +51,7 @@ func main() {
 
 	conn, err := grpc.DialContext(
 		context.Background(),
-		"localhost:8080",
+		"0.0.0.0:8080",
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	gwServer := http.Server{
-		Addr:    "localhost:8090",
+		Addr:    "0.0.0.0:8090",
 		Handler: gwmux,
 	}
 	log.Println("Serving gRPC-Gateway on http://0.0.0.0:8090")

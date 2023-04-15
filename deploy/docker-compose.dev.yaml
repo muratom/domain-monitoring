@@ -1,13 +1,14 @@
 version: '3.8'
 services:
-  # cache:
-  #   image: redis:6.2.11-alpine
-  #   restart: always
-  #   ports:
-  #     - '6379:6379'
-  #   command: redis-server --save 60 1 --loglevel verbose --requirepass abracadabra
-  #   volumes:
-  #     - cache:/data
+  emitter:
+    container_name: "emitter"
+    build:
+      context: ../services/emitter
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+      - '8090:8090'
   db:
     image: postgres:15.2
     environment:
@@ -32,7 +33,14 @@ services:
         limits:
           cpus: '1'
           memory: 1G
-
+    # cache:
+  #   image: redis:6.2.11-alpine
+  #   restart: always
+  #   ports:
+  #     - '6379:6379'
+  #   command: redis-server --save 60 1 --loglevel verbose --requirepass abracadabra
+  #   volumes:
+  #     - cache:/data
 volumes:
   postgres:
   

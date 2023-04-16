@@ -38,29 +38,48 @@ func NewDomainService(emitterClients []EmitterClient, domainRepo entity.DomainRe
 	}
 }
 
-func (s *DomainService) AddDomain(ctx context.Context, fqdn string) error {
+func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
 	domain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
-		return fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
+		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
 	err = s.domainRepository.Store(ctx, domain)
 	if err != nil {
-		return fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
+		return nil, fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
 	}
-	return nil
+
+	return domain, nil
 }
 
-func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) error {
+func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+	domain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
+	if err != nil {
+		return nil, fmt.Errorf("DomainService.GetDomain: failed to get domain from repository: %w", err)
+	}
+
+	return domain, err
+}
+
+func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
 	domain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
-		return fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
+		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
 	err = s.domainRepository.Update(ctx, domain, fqdn)
 	if err != nil {
-		return fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
+		return nil, fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
 	}
+	return domain, nil
+}
+
+func (s *DomainService) DeleteDomain(ctx context.Context, fqdn string) error {
+	err := s.domainRepository.Delete(ctx, fqdn)
+	if err != nil {
+		return fmt.Errorf("DomainService.DeleteDomain: failed to delete domain: %w", err)
+	}
+
 	return nil
 }
 

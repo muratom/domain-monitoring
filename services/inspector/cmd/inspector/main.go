@@ -71,7 +71,7 @@ func main() {
 					}
 					notifications = append(notifications, nots...)
 
-					err = domainService.UpdateDomain(ctx, fqdn)
+					_, err = domainService.UpdateDomain(ctx, fqdn)
 					if err != nil {
 						logrus.Warnf("error updating domain (%v): %v", fqdn, err)
 					}

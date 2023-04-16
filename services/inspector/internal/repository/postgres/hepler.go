@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
@@ -12,7 +13,7 @@ import (
 )
 
 func (r *DomainRepository) prepareDomainEntry(ctx context.Context, fqdn string) (*models.Domain, error) {
-	return models.Domains(
+	domain, err := models.Domains(
 		models.DomainWhere.FQDN.EQ(fqdn),
 		qm.Load(models.DomainRels.Ipv4Addresses),
 		qm.Load(models.DomainRels.Ipv6Addresses),
@@ -23,6 +24,10 @@ func (r *DomainRepository) prepareDomainEntry(ctx context.Context, fqdn string) 
 		qm.Load(models.DomainRels.TextStrings),
 		qm.Load(models.DomainRels.Registrations),
 	).One(ctx, r.Conn)
+	if err == sql.ErrNoRows {
+		return nil, errors.Join(err, entity.ErrDomainNotFound)
+	}
+	return domain, err
 }
 
 func addWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {

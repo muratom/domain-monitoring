@@ -120,7 +120,7 @@ func (r *DomainRepository) GetRottenDomainsFQDN(ctx context.Context) ([]string, 
 	return result, nil
 }
 
-func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) error {
+func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) (err error) {
 	domainEntry := models.Domain{
 		FQDN:        domain.FQDN,
 		UpdatedAt:   time.Now(),
@@ -132,12 +132,17 @@ func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) err
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))
+			}
+		}
+	}()
+
 	err = domainEntry.Insert(ctx, tx, boil.Infer())
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rollback of the Domain transaction was failed: %w", rollbackErr)
-		}
 		return fmt.Errorf("failed to insert Domain into DB: %w", err)
 	}
 
@@ -153,17 +158,13 @@ func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) err
 
 	err = tx.Commit()
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rollback of the transaction was failed: %w", rollbackErr)
-		}
 		return fmt.Errorf("commit of the transcation failed: %w", err)
 	}
 
 	return nil
 }
 
-func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, storedFQDN string) error {
+func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, storedFQDN string) (err error) {
 	// Domain's FQDN may have changed
 	domainEntry, err := r.prepareDomainEntry(ctx, storedFQDN)
 	if err != nil {
@@ -174,6 +175,15 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
+
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))
+			}
+		}
+	}()
 
 	err = deleteRelatedEntries(ctx, tx, *domainEntry)
 	if err != nil {
@@ -198,12 +208,23 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 
 	err = tx.Commit()
 	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			return fmt.Errorf("rollback of the transaction was failed: %w", rollbackErr)
-		}
 		return fmt.Errorf("commit of the transcation failed: %w", err)
 	}
+
+	return nil
+}
+
+func (r *DomainRepository) Delete(ctx context.Context, fqdn string) error {
+	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
+	if err != nil {
+		return fmt.Errorf("failed to fetch data from DB for FQDN (%v): %w", fqdn, err)
+	}
+
+	rowsDeleted, err := domainEntry.Delete(ctx, r.Conn)
+	if err != nil {
+		return fmt.Errorf("failed to delete from DB data for FQDN (%v): %w", fqdn, err)
+	}
+	logrus.Infof("%v rows deleted for FQDN (%v)", rowsDeleted, fqdn)
 
 	return nil
 }

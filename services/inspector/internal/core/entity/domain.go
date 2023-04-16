@@ -2,6 +2,7 @@ package entity
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
@@ -90,10 +91,15 @@ type Change struct {
 
 type Changelog []Change
 
+var (
+	ErrDomainNotFound = errors.New("domain not found")
+)
+
 type DomainRepository interface {
 	GetByFQDN(ctx context.Context, fqdn string) (*Domain, error)
 	GetRottenDomainsFQDN(ctx context.Context) ([]string, error)
 	Store(ctx context.Context, domain *Domain) error
 	Update(ctx context.Context, domain *Domain, storedFQDN string) error
+	Delete(ctx context.Context, fqdn string) error
 	SaveChangelog(ctx context.Context, fqdn string, changelog *Changelog) error
 }

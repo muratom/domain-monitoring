@@ -24,21 +24,28 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, "localhost:8080", grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logrus.Fatalf("unable to connect to the emitter: %v", err)
+	emitterAddresses := []string{
+		"emitter_1:8080",
+		"emitter_2:8080",
 	}
-	logrus.Infof("successfully connect to an emitter")
-	emitterClient := emitterclient.NewGrpcEmitterClient(conn, 10*time.Second)
+	emitters := make([]service.EmitterClient, 0, 2)
+	for _, address := range emitterAddresses {
+		conn, err := grpc.DialContext(ctx, address, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			logrus.Fatalf("unable to connect to the emitter: %v", err)
+		}
+		logrus.Infof("successfully connect to an emitter at address %v", address)
+		emitters = append(emitters, emitterclient.NewGrpcEmitterClient(conn, 10*time.Second))
+	}
 
-	dbConn, err := sql.Open("postgres", "host=localhost port=5432 dbname=domain user=user sslmode=disable password=root")
+	dbConn, err := sql.Open("postgres", "host=db port=5432 dbname=domain user=user sslmode=disable password=root")
 	if err != nil {
 		logrus.Fatalf("connection to DB was failed: %v", err)
 	}
 	logrus.Infof("successfully connect to a database")
 	repo := postgres.NewDomainRepository(dbConn)
 
-	domainService := service.NewDomainService([]service.EmitterClient{emitterClient}, repo)
+	domainService := service.NewDomainService(emitters, repo)
 
 	// mailNotifier := service.NewMailNotifier("<from>", "<to>", "<username>", "<password>", "<smtp_host>", 42)
 	stdoutNotifier := &service.StdoutNotifier{}
@@ -47,7 +54,7 @@ func main() {
 		// mailNotifier,
 	}
 
-	ticker := time.Tick(10 * time.Second)
+	ticker := time.After(2 * time.Second)
 	go func() {
 		logrus.Infof("starting cron")
 		for {

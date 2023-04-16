@@ -4,8 +4,10 @@ go 1.20
 
 require (
 	github.com/foxcpp/go-mockdns v1.0.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/muratom/domain-monitoring/api/proto/v1/emitter v0.0.0-20230416104659-5d5ea09aa637
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	github.com/zonedb/zonedb v1.0.4085
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1

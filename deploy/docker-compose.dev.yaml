@@ -1,7 +1,25 @@
 version: '3.8'
 services:
-  emitter:
-    container_name: "emitter"
+  inspector:
+    container_name: "inspector"
+    build:
+      context: ../services/inspector
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    healthcheck:
+      test: ["CMD", "healthcheck -port 8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - db
+      - emitter_1
+      - emitter_2
+  emitter_1:
+    container_name: "emitter_1"
     build:
       context: ../services/emitter
       dockerfile: Dockerfile
@@ -9,6 +27,15 @@ services:
     ports:
       - '8080:8080'
       - '8090:8090'
+  emitter_2:
+    container_name: "emitter_2"
+    build:
+      context: ../services/emitter
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8010:8080'
+      - '8020:8090'
   db:
     image: postgres:15.2
     environment:
@@ -33,6 +60,7 @@ services:
         limits:
           cpus: '1'
           memory: 1G
+  
     # cache:
   #   image: redis:6.2.11-alpine
   #   restart: always

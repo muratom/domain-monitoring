@@ -1,8 +1,8 @@
 go 1.20
 
 use (
-	./services/emitter
-	./services/inspector
 	./api/proto/v1/emitter
 	./api/rpc/v1/inspector
+	./services/emitter
+	./services/inspector
 )

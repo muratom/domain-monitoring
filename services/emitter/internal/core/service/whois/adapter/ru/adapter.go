@@ -46,6 +46,7 @@ type Response struct {
 
 	// Список DNS-серверов, указанных для домена
 	// (если имя сервера содержит имя домена, то указываются также его IP-адреса)
+	// Currently unsupported
 	nserver []string
 
 	// Состояние доменного имени
@@ -98,7 +99,7 @@ func (a *Adapter) ParseResponse(ctx context.Context, resp *whois.Response) (*who
 	}
 
 	return &whoisentity.Record{
-		DomainName:  ruResponse.domain,
+		DomainName:  prepareDomainName(ruResponse.domain),
 		NameServers: ruResponse.nserver,
 		Registrar:   ruResponse.registrar,
 		Created:     ruResponse.created,
@@ -152,4 +153,10 @@ func parseResponse(ctx context.Context, rawResponse []byte) (*Response, error) {
 		created:   created,
 		paidTill:  paidTill,
 	}, nil
+}
+
+func prepareDomainName(domainName string) string {
+	domainName = strings.ToLower(domainName)
+	domainName = strings.TrimRight(domainName, ".")
+	return fmt.Sprintf("%s.", domainName)
 }

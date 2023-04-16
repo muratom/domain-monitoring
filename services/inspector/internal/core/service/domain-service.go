@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
+	"sort"
 	"sync/atomic"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 // TODO: set by config
@@ -181,7 +182,7 @@ func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string
 	expiringSoonTimestamp := whoisResp.Records.PaidTill.Add(-expiringDomainThreshold)
 	if time.Now().After(expiringSoonTimestamp) {
 		// Domain registration is going to expire
-		notification := &entity.RegistrationExpireSoonNotification{
+		notification := &entity.RegistrationExpiresSoonNotification{
 			FQDN:      fqdn,
 			Registrar: whoisResp.Records.Registrar,
 			PaidTill:  whoisResp.Records.PaidTill,
@@ -284,7 +285,7 @@ func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (enti
 		return nil, fmt.Errorf("error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
-	changelog, err := s.domainDiffer.Diff(freshDomain, rottenDomain)
+	changelog, err := s.domainDiffer.Diff(rottenDomain, freshDomain)
 	if err != nil {
 		return nil, fmt.Errorf("error making diff between domains: %w", err)
 	}
@@ -301,10 +302,12 @@ func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []st
 		return true, nil
 	}
 	baseResponse := responses[0]
+	baseResponseResourceRecords := baseResponse.ResourceRecords
 	syncWithBase := []string{baseResponse.Request.DNSServerHost}
 	notSyncWithBase := []string{}
 	for _, resp := range responses[1:] {
-		if !reflect.DeepEqual(resp, baseResponse) {
+		// if !reflect.DeepEqual(resp.ResourceRecords, baseResponseResourceRecords) {
+		if !compareResourceRecords(resp.ResourceRecords, baseResponseResourceRecords) {
 			notSyncWithBase = append(notSyncWithBase, resp.Request.DNSServerHost)
 		} else {
 			syncWithBase = append(syncWithBase, resp.Request.DNSServerHost)
@@ -320,4 +323,44 @@ func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []st
 	} else {
 		return false, syncWithBase
 	}
+}
+
+func compareResourceRecords(x, y dns.ResourceRecords) bool {
+	sort.Strings(x.A)
+	sort.Strings(y.A)
+	if !slices.Equal(x.A, y.A) {
+		return false
+	}
+
+	sort.Strings(x.AAAA)
+	sort.Strings(y.AAAA)
+	if !slices.Equal(x.AAAA, y.AAAA) {
+		return false
+	}
+
+	if x.CNAME != y.CNAME {
+		return false
+	}
+
+	sort.Sort(x.MX)
+	sort.Sort(y.MX)
+	if !slices.Equal(x.MX, y.MX) {
+		return false
+	}
+
+	sort.Sort(x.NS)
+	sort.Sort(y.NS)
+	if !slices.Equal(x.NS, y.NS) {
+		return false
+	}
+
+	sort.Sort(x.SRV)
+	sort.Sort(y.SRV)
+	if !slices.Equal(x.SRV, y.SRV) {
+		return false
+	}
+
+	sort.Strings(x.TXT)
+	sort.Strings(y.TXT)
+	return slices.Equal(x.TXT, y.TXT)
 }

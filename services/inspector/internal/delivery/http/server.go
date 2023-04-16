@@ -4,14 +4,20 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector/models"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
+	"github.com/sirupsen/logrus"
 )
 
 type InspectorServer struct {
-	domainService service.DomainService
+	domainService DomainService
+}
+
+func NewInspectorServer(domainService DomainService) *InspectorServer {
+	return &InspectorServer{
+		domainService: domainService,
+	}
 }
 
 func (s *InspectorServer) AddDomain(ctx echo.Context, params models.AddDomainParams) error {
@@ -20,6 +26,7 @@ func (s *InspectorServer) AddDomain(ctx echo.Context, params models.AddDomainPar
 		resp := models.Error{
 			Message: "failed to add domain",
 		}
+		logrus.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, resp)
 	}
 
@@ -32,6 +39,7 @@ func (s *InspectorServer) DeleteDomain(ctx echo.Context, params models.DeleteDom
 		if err == entity.ErrDomainNotFound {
 			return ctx.JSON(http.StatusNotFound, models.Error{Message: fmt.Sprintf("domain %v not found", params.Fqdn)})
 		}
+		logrus.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, models.Error{Message: "failed to delete domain"})
 	}
 
@@ -44,6 +52,7 @@ func (s *InspectorServer) GetDomain(ctx echo.Context, params models.GetDomainPar
 		if err == entity.ErrDomainNotFound {
 			return ctx.JSON(http.StatusNotFound, models.Error{Message: fmt.Sprintf("domain %v not found", params.Fqdn)})
 		}
+		logrus.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, models.Error{Message: "failed to get domain"})
 	}
 
@@ -56,6 +65,7 @@ func (s *InspectorServer) UpdateDomain(ctx echo.Context, params models.UpdateDom
 		if err == entity.ErrDomainNotFound {
 			return ctx.JSON(http.StatusNotFound, models.Error{Message: fmt.Sprintf("domain %v not found", params.Fqdn)})
 		}
+		logrus.Error(err)
 		return ctx.JSON(http.StatusInternalServerError, models.Error{Message: "failed to update domain"})
 	}
 

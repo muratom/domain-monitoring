@@ -75,17 +75,21 @@ func buildDNSResponse(ctx context.Context, req *service.GetDNSRequest, dnsRespon
 		}
 	}
 
+	resourceRecords := &dns.ResourceRecords{
+		A:     dnsResponse.ResourceRecords.A,
+		AAAA:  dnsResponse.ResourceRecords.AAAA,
+		CNAME: dnsResponse.ResourceRecords.CNAME,
+		MX:    mx,
+		NS:    ns,
+		SRV:   srv,
+		TXT:   dnsResponse.ResourceRecords.TXT,
+	}
+	// Sort resource records because DNS servers can return same values in different order
+	resourceRecords.Sort()
+
 	return &service.GetDNSResponse{
-		Request: *req,
-		ResourceRecords: dns.ResourceRecords{
-			A:     dnsResponse.ResourceRecords.A,
-			AAAA:  dnsResponse.ResourceRecords.AAAA,
-			CNAME: dnsResponse.ResourceRecords.CNAME,
-			MX:    mx,
-			NS:    ns,
-			SRV:   srv,
-			TXT:   dnsResponse.ResourceRecords.TXT,
-		},
+		Request:         *req,
+		ResourceRecords: *resourceRecords,
 	}
 }
 

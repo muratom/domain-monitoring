@@ -52,6 +52,9 @@ func (s *MailNotifier) Notify(notifications []entity.Notification) error {
 	for _, notification := range notifications {
 		body += fmt.Sprintf("%s\n", notification.AsHumanReadable())
 	}
+	if len(body) == 0 {
+		return nil
+	}
 	m.SetBody("text/plain", body)
 
 	dialer := gomail.NewDialer(s.smtpHost, s.smtpPort, s.username, s.password)

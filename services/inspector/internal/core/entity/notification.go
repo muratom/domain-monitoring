@@ -19,13 +19,13 @@ func (n *TempNotification) AsHumanReadable() string {
 	return "Hello"
 }
 
-type RegistrationExpireSoonNotification struct {
+type RegistrationExpiresSoonNotification struct {
 	FQDN      string
 	Registrar string
 	PaidTill  time.Time
 }
 
-func (n *RegistrationExpireSoonNotification) AsHumanReadable() string {
+func (n *RegistrationExpiresSoonNotification) AsHumanReadable() string {
 	return fmt.Sprintf(
 		"A registration of a domain %v is going to expire soon. "+
 			"Till %v contact the registrar %v to pay for prolongation.",
@@ -72,8 +72,8 @@ func (n *ResourceRecordChangedNotification) AsHumanReadable() string {
 	n.From = nilToEmpty(n.From)
 	n.To = nilToEmpty(n.To)
 	return fmt.Sprintf(
-		"A DNS resource record %v for a domain %v has changed from %v to %v",
-		n.RecordType, n.FQDN, n.From, n.To,
+		"A DNS resource record %v (%v) for a domain %v has changed from %v to %v",
+		n.RecordType, n.Path, n.FQDN, n.From, n.To,
 	)
 }
 

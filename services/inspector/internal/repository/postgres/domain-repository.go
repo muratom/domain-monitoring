@@ -88,6 +88,7 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		WHOIS: whois.Records{
 			DomainName:  domainEntry.FQDN,
 			NameServers: []string{},
+			Registrar:   whoisInfo.Registrar,
 			Created:     whoisInfo.Created,
 			PaidTill:    whoisInfo.PaidTill,
 		},
@@ -190,6 +191,7 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 		return fmt.Errorf("failed to delete related entries: %w", err)
 	}
 
+	domainEntry.UpdatedAt = time.Now()
 	rowsUpdated, err := domainEntry.Update(ctx, tx, boil.Infer())
 	if err != nil {
 		return fmt.Errorf("failed to update domain entry: %w", err)

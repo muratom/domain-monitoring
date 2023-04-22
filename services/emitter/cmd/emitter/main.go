@@ -18,12 +18,22 @@ import (
 	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/client"
 	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/server-provider"
 	server "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc"
+	"github.com/muratom/domain-monitoring/tools/tracing"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
+	tp := tracing.InitTracer("emitter", "http://jaeger:14268/api/traces")
+	defer func() {
+		err := tp.Shutdown(context.Background())
+		if err != nil {
+			logrus.Fatalf("faield to shutdown tracer provider: %v", err)
+		}
+	}()
+
 	listener, err := net.Listen("tcp", "0.0.0.0:8080")
 	if err != nil {
 		log.Fatalln("failed to listen:", err)
@@ -37,20 +47,12 @@ func main() {
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			otelgrpc.UnaryServerInterceptor(),
 			logging.UnaryServerInterceptor(InterceptorLogger(logger), opts...),
 		),
 	)
 
-	dnsResolver := &net.Resolver{
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			dialer := net.Dialer{
-				// TODO: set timeout by config
-				Timeout: 3 * time.Second,
-			}
-			return dialer.DialContext(ctx, network, address)
-		},
-	}
-	dnsService := dns.NewService(dnsclient.NewLibraryClient(dnsResolver))
+	dnsService := dns.NewService(dnsclient.NewLibraryClient(5 * time.Second))
 
 	// TODO: set timeout by config
 	whoisClient := whoisclient.NewWhoisClient(1 * time.Second)

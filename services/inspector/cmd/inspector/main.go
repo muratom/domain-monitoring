@@ -7,30 +7,57 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gammazero/workerpool"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter-client"
 	inspectorserver "github.com/muratom/domain-monitoring/services/inspector/internal/delivery/http"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres"
+	"github.com/muratom/domain-monitoring/tools/tracing"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const (
+	emitterClientTimeout = 5 * time.Second
+)
+
 func main() {
+	tp := tracing.InitTracer("inspector", "http://jaeger:14268/api/traces")
+	defer func() {
+		err := tp.Shutdown(context.Background())
+		if err != nil {
+			logrus.Fatalf("faield to shutdown tracer provider: %v", err)
+		}
+	}()
+	tracer := otel.Tracer("inspector")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	emitterAddresses := []string{
 		"emitter_1:8080",
 		"emitter_2:8080",
 	}
 	emitters := make([]service.EmitterClient, 0, 2)
 	for _, address := range emitterAddresses {
-		conn, err := grpc.DialContext(ctx, address, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.DialContext(
+			ctx,
+			address,
+			grpc.WithBlock(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithChainUnaryInterceptor(
+				timeout.UnaryClientInterceptor(emitterClientTimeout),
+				otelgrpc.UnaryClientInterceptor()),
+		)
 		if err != nil {
 			logrus.Fatalf("unable to connect to the emitter: %v", err)
 		}
@@ -60,45 +87,65 @@ func main() {
 		for {
 			select {
 			case <-ticker:
+				ctx, span := tracer.Start(ctx, "inspector.tick")
 				logrus.Infof("Tick")
 				rottenFQDNs, err := domainService.GetRottenDomainsFQDN(ctx)
 				if err != nil {
 					logrus.Warnf("failed to get rotten domains' FQDNs: %v", err)
 					continue
 				}
-				var notifications []entity.Notification
+
+				wp := workerpool.New(len(rottenFQDNs))
+				checkResults := make(chan checkResult, len(rottenFQDNs))
 				for _, fqdn := range rottenFQDNs {
-					logrus.Infof("check domain (%v) name servers", fqdn)
-					nots, err := domainService.CheckDomainNameServers(ctx, fqdn)
-					if err != nil {
-						logrus.Warnf("failed to check name servers for FQDN (%v): %v", fqdn, err)
-					}
-					notifications = append(notifications, nots...)
+					fqdn := fqdn
+					wp.Submit(func() {
+						ctx, cancel := context.WithCancel(ctx)
+						defer cancel()
 
-					logrus.Infof("check domain (%v) registration", fqdn)
-					nots, err = domainService.CheckDomainRegistration(ctx, fqdn)
-					if err != nil {
-						logrus.Warnf("failed to check registration for FQDN (%v): %v", fqdn, err)
-					}
-					notifications = append(notifications, nots...)
+						ctx, span := tracer.Start(ctx, "inspector.worker")
 
-					logrus.Infof("check domain (%v) changes", fqdn)
-					nots, err = domainService.CheckDomainChanges(ctx, fqdn)
-					if err != nil {
-						logrus.Warnf("failed to check changes for FQDN (%v): %v", fqdn, err)
-					}
-					notifications = append(notifications, nots...)
+						var notifications []entity.Notification
+						nots, err := domainService.CheckDomainNameServers(ctx, fqdn)
+						if err != nil {
+							logrus.Warnf("failed to check name servers for FQDN (%v): %v", fqdn, err)
+						}
+						notifications = append(notifications, nots...)
 
-					logrus.Infof("updating domain (%v)", fqdn)
-					_, err = domainService.UpdateDomain(ctx, fqdn)
-					if err != nil {
-						logrus.Warnf("error updating domain (%v): %v", fqdn, err)
-					}
+						nots, err = domainService.CheckDomainRegistration(ctx, fqdn)
+						if err != nil {
+							logrus.Warnf("failed to check registration for FQDN (%v): %v", fqdn, err)
+						}
+						notifications = append(notifications, nots...)
+
+						nots, err = domainService.CheckDomainChanges(ctx, fqdn)
+						if err != nil {
+							logrus.Warnf("failed to check changes for FQDN (%v): %v", fqdn, err)
+						}
+						notifications = append(notifications, nots...)
+
+						_, err = domainService.UpdateDomain(ctx, fqdn)
+						if err != nil {
+							logrus.Warnf("error updating domain (%v): %v", fqdn, err)
+						}
+
+						checkResults <- checkResult{
+							notifications: notifications,
+							err:           err,
+						}
+						span.End()
+					})
 				}
+
+				wp.StopWait()
+				close(checkResults)
 
 				for _, notifier := range notifiers {
-					notifier.Notify(notifications)
+					for result := range checkResults {
+						notifier.Notify(result.notifications)
+					}
 				}
+				span.End()
 			case <-ctx.Done():
 				logrus.Infof("ticker is stopping...")
 				return
@@ -117,4 +164,9 @@ func main() {
 	}
 
 	logrus.Infof("exiting...")
+}
+
+type checkResult struct {
+	notifications []entity.Notification
+	err           error
 }

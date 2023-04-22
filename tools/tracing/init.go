@@ -3,6 +3,7 @@ package tracing
 import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -18,6 +19,7 @@ func InitTracer(serviceName, jaegerCollectorURL string) *tracesdk.TracerProvider
 	}
 
 	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	return tp
 }

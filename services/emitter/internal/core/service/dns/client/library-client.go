@@ -9,6 +9,7 @@ import (
 
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
 	client "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/dns"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,25 +17,29 @@ const (
 )
 
 type LibraryClient struct {
-	resolver *net.Resolver
+	requestTimeout time.Duration
 }
 
-func NewLibraryClient(resolver *net.Resolver) *LibraryClient {
+func NewLibraryClient(requestTimeout time.Duration) *LibraryClient {
 	return &LibraryClient{
-		resolver: resolver,
+		requestTimeout: requestTimeout,
 	}
 }
 
 func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.LookupParams) (*dns.ResourceRecords, error) {
-	resolver := c.resolver
-	if lookupParams.DNSServerHost != "" {
-		resolver.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{
 				// TODO: set from config
-				Timeout: defaultConnectionTimeout,
+				Timeout: c.requestTimeout,
 			}
-			return d.DialContext(ctx, network, fmt.Sprintf("%v:53", lookupParams.DNSServerHost))
-		}
+			dnsServer := address
+			if lookupParams.DNSServerHost != "" {
+				dnsServer = fmt.Sprintf("%v:53", lookupParams.DNSServerHost)
+			}
+			return d.DialContext(ctx, network, dnsServer)
+		},
 	}
 
 	host := lookupParams.FQDN
@@ -44,6 +49,7 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 		// Check fact of serving only here because A and AAAA records are basic
 		if dnsError, ok := err.(*net.DNSError); ok {
 			if dnsError.IsNotFound || strings.Contains(dnsError.Err, "server misbehaving") {
+				logrus.Warnf("lookupParams: %+v, error: %v", lookupParams, err)
 				return nil, client.ErrStopServing
 			}
 		}
@@ -61,12 +67,12 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 		}
 	}
 
-	cname, err := c.resolver.LookupCNAME(ctx, host)
+	cname, err := resolver.LookupCNAME(ctx, host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get CNAME for the host (%s): %w", host, err)
 	}
 
-	resolvedMXs, err := c.resolver.LookupMX(ctx, host)
+	resolvedMXs, err := resolver.LookupMX(ctx, host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get MX for the host (%s): %w", host, err)
 	}
@@ -78,7 +84,7 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 		}
 	}
 
-	resolvedNSs, err := c.resolver.LookupNS(ctx, host)
+	resolvedNSs, err := resolver.LookupNS(ctx, host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get NS for the host (%s): %w", host, err)
 	}
@@ -87,7 +93,7 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 		nss[i] = dns.NS{Host: ns.Host}
 	}
 
-	_, resolvedSRVs, err := c.resolver.LookupSRV(ctx, "", "", host)
+	_, resolvedSRVs, err := resolver.LookupSRV(ctx, "", "", host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get SRV for the host (%s): %w", host, err)
 	}
@@ -101,7 +107,7 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 		}
 	}
 
-	resolvedTXTs, err := c.resolver.LookupTXT(ctx, host)
+	resolvedTXTs, err := resolver.LookupTXT(ctx, host)
 	if err != nil && isFatalError(err) {
 		return nil, fmt.Errorf("failed to get TXT for the host (%s): %w", host, err)
 	}

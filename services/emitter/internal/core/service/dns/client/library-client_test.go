@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/foxcpp/go-mockdns"
 	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
@@ -54,7 +55,7 @@ func (s *LibraryClientTestSuite) TearDownSuite() {
 }
 
 func (s *LibraryClientTestSuite) TestAllResourceRecords() {
-	dnsClient := NewLibraryClient(s.netResolver)
+	dnsClient := NewLibraryClient(1 * time.Second)
 	rr, err := dnsClient.LookupRR(context.Background(), dns.LookupParams{FQDN: "www.example.com"})
 	s.Require().NoError(err)
 	s.Require().ElementsMatch([]string{"1.2.3.4", "42.73.7.2"}, rr.A)
@@ -79,7 +80,7 @@ func (s *LibraryClientTestSuite) TestAllResourceRecords() {
 }
 
 func (s *LibraryClientTestSuite) TestAllResourceRecordsWithDNSServerSet() {
-	dnsClient := NewLibraryClient(s.netResolver)
+	dnsClient := NewLibraryClient(1 * time.Second)
 	s.dnsServerMock.Authoritative = true
 	lookupParams := dns.LookupParams{
 		FQDN:          "www.example.com",
@@ -109,7 +110,7 @@ func (s *LibraryClientTestSuite) TestAllResourceRecordsWithDNSServerSet() {
 }
 
 func (s *LibraryClientTestSuite) TestNotServing() {
-	dnsClient := NewLibraryClient(s.netResolver)
+	dnsClient := NewLibraryClient(1 * time.Second)
 	s.dnsServerMock.Authoritative = true
 	lookupParams := dns.LookupParams{
 		FQDN:          "hotstuff.com",

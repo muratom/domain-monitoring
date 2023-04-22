@@ -11,6 +11,9 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/zonedb/zonedb v1.0.4085
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0
+	go.opentelemetry.io/otel v1.14.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.14.0
+	go.opentelemetry.io/otel/sdk v1.14.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
@@ -23,12 +26,8 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/miekg/dns v1.1.53 // indirect
-	github.com/muratom/domain-monitoring/tools/tracing v0.0.0-20230422000709-dbb0297569c7 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/exporters/jaeger v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect

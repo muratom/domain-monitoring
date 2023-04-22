@@ -12,6 +12,8 @@ import (
 	_ "github.com/lib/pq"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
@@ -20,7 +22,7 @@ import (
 	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter-client"
 	inspectorserver "github.com/muratom/domain-monitoring/services/inspector/internal/delivery/http"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres"
-	"github.com/muratom/domain-monitoring/tools/tracing"
+	"github.com/muratom/domain-monitoring/services/inspector/tools/tracing"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -38,7 +40,7 @@ func main() {
 			logrus.Fatalf("faield to shutdown tracer provider: %v", err)
 		}
 	}()
-	tracer := otel.Tracer("inspector")
+	tracer := otel.Tracer("")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -62,7 +64,7 @@ func main() {
 			logrus.Fatalf("unable to connect to the emitter: %v", err)
 		}
 		logrus.Infof("successfully connect to an emitter at address %v", address)
-		emitters = append(emitters, emitterclient.NewGrpcEmitterClient(conn, 10*time.Second))
+		emitters = append(emitters, emitterclient.NewGrpcEmitterClient(conn))
 	}
 
 	dbConn, err := sql.Open("postgres", "host=db port=5432 dbname=domain user=user sslmode=disable password=root")
@@ -87,7 +89,7 @@ func main() {
 		for {
 			select {
 			case <-ticker:
-				ctx, span := tracer.Start(ctx, "inspector.tick")
+				ctx, span := tracer.Start(ctx, "tick")
 				logrus.Infof("Tick")
 				rottenFQDNs, err := domainService.GetRottenDomainsFQDN(ctx)
 				if err != nil {
@@ -103,7 +105,9 @@ func main() {
 						ctx, cancel := context.WithCancel(ctx)
 						defer cancel()
 
-						ctx, span := tracer.Start(ctx, "inspector.worker")
+						ctx, span := tracer.Start(ctx, "worker", trace.WithAttributes(
+							attribute.String("FQDN", fqdn),
+						))
 
 						var notifications []entity.Notification
 						nots, err := domainService.CheckDomainNameServers(ctx, fqdn)

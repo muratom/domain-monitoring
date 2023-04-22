@@ -3,7 +3,6 @@ package emitterclient
 import (
 	"context"
 	"fmt"
-	"time"
 
 	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
@@ -19,7 +18,7 @@ type grpcEmitterClient struct {
 	grpcClient pb.EmitterClient
 }
 
-func NewGrpcEmitterClient(cc *grpc.ClientConn, requestTimeout time.Duration) *grpcEmitterClient {
+func NewGrpcEmitterClient(cc *grpc.ClientConn) *grpcEmitterClient {
 	return &grpcEmitterClient{
 		grpcClient: pb.NewEmitterClient(cc),
 	}

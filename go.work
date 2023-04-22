@@ -5,5 +5,4 @@ use (
 	./api/rpc/v1/inspector
 	./services/emitter
 	./services/inspector
-	./tools/tracing
 )

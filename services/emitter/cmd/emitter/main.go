@@ -18,7 +18,7 @@ import (
 	whoisclient "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/client"
 	serverprovider "github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/server-provider"
 	server "github.com/muratom/domain-monitoring/services/emitter/internal/delivery/grpc"
-	"github.com/muratom/domain-monitoring/tools/tracing"
+	"github.com/muratom/domain-monitoring/services/emitter/tools/tracing"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -36,7 +36,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", "0.0.0.0:8080")
 	if err != nil {
-		log.Fatalln("failed to listen:", err)
+		logrus.Fatalf("failed to listen:", err)
 	}
 
 	logger := logrus.New()

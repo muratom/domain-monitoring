@@ -23,6 +23,7 @@ func NewService(dnsClient Client) *Service {
 func (s *Service) LookupResourceRecords(ctx context.Context, lookupParams LookupParams) (*dns.ResourceRecords, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DNSService.LookupResourceRecords", trace.WithAttributes(
 		attribute.String("FQDN", lookupParams.FQDN),
+		attribute.String("DNS server", lookupParams.DNSServerHost),
 	))
 	defer span.End()
 

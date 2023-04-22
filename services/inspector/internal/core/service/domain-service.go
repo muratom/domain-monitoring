@@ -13,6 +13,9 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 )
 
@@ -40,6 +43,11 @@ func NewDomainService(emitterClients []EmitterClient, domainRepo entity.DomainRe
 }
 
 func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.AddDomain", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	domain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
@@ -54,6 +62,11 @@ func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Dom
 }
 
 func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetDomain", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	domain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.GetDomain: failed to get domain from repository: %w", err)
@@ -63,6 +76,11 @@ func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*entity.Dom
 }
 
 func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.UpdateDomain", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	domain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
@@ -76,6 +94,11 @@ func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*entity.
 }
 
 func (s *DomainService) DeleteDomain(ctx context.Context, fqdn string) error {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.DeleteDomain", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	err := s.domainRepository.Delete(ctx, fqdn)
 	if err != nil {
 		return fmt.Errorf("DomainService.DeleteDomain: failed to delete domain: %w", err)
@@ -85,6 +108,9 @@ func (s *DomainService) DeleteDomain(ctx context.Context, fqdn string) error {
 }
 
 func (s *DomainService) GetRottenDomainsFQDN(ctx context.Context) ([]string, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetRotternDomainsFQDN")
+	defer span.End()
+
 	return s.domainRepository.GetRottenDomainsFQDN(ctx)
 }
 
@@ -99,6 +125,11 @@ var (
 )
 
 func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainNameServers", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	domain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("error getting domain by FQDN: %w", err)
@@ -121,9 +152,6 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 		// For load-balancing get next emitter to make request
 		emitter := s.getEmitterClient(ctx)
 		wp.Submit(func() {
-			ctx, cancel := context.WithTimeout(ctx, emitterClientTimeout)
-			defer cancel()
-
 			logrus.Infof("worker: starting DNS request to NS %v for FQDN %v", req.DNSServerHost, req.FQDN)
 			resp, err := emitter.GetDNS(ctx, &req)
 			results <- dnsResult{
@@ -171,6 +199,11 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 }
 
 func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainRegistration", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	emitter := s.getEmitterClient(ctx)
 	whoisResp, err := emitter.GetWhois(ctx, &GetWhoisRequest{FQDN: fqdn})
 	if err != nil {
@@ -202,6 +235,11 @@ func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string
 }
 
 func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainChanges", trace.WithAttributes(
+		attribute.String("FQDN", fqdn),
+	))
+	defer span.End()
+
 	changelog, err := s.getDomainChanges(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("error getting domain changes: %w", err)

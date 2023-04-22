@@ -7,6 +7,8 @@ import (
 )
 
 type DomainService interface {
+	Start(ctx context.Context)
+	Stop(ctx context.Context)
 	AddDomain(ctx context.Context, fqdn string) (*entity.Domain, error)
 	GetDomain(ctx context.Context, fqdn string) (*entity.Domain, error)
 	UpdateDomain(ctx context.Context, fqdn string) (*entity.Domain, error)

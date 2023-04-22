@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	emitterClientTimeout = 5 * time.Second
+	emitterClientTimeout = 10 * time.Second
 )
 
 func main() {
@@ -75,6 +75,8 @@ func main() {
 	repo := postgres.NewDomainRepository(dbConn)
 
 	domainService := service.NewDomainService(emitters, repo)
+	domainService.Start(ctx)
+	defer domainService.Stop(ctx)
 
 	// mailNotifier := service.NewMailNotifier("<from>", "<to>", "<username>", "<password>", "<smtp_host>", 42)
 	stdoutNotifier := &service.StdoutNotifier{}

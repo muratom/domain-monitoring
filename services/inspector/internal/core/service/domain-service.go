@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gammazero/workerpool"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
@@ -21,6 +22,7 @@ import (
 
 // TODO: set by config
 const (
+	cacheTTL                = 1 * time.Minute
 	workerPoolSize          = 5
 	emitterClientTimeout    = 3 * time.Second
 	expiringDomainThreshold = 30 * 24 * time.Hour // 1 month
@@ -31,15 +33,30 @@ type DomainService struct {
 	emitterCounter   atomic.Uint32
 	domainRepository entity.DomainRepository
 	domainDiffer     domainDiffer
+	domainTTLCache   *ttlcache.Cache[string, entity.Domain]
 }
 
 func NewDomainService(emitterClients []EmitterClient, domainRepo entity.DomainRepository) *DomainService {
 	differ := &libDomainDiffer{}
+	ttlCache := ttlcache.New(
+		ttlcache.WithTTL[string, entity.Domain](cacheTTL),
+	)
+
 	return &DomainService{
 		emitters:         emitterClients,
 		domainRepository: domainRepo,
 		domainDiffer:     differ,
+		domainTTLCache:   ttlCache,
 	}
+}
+
+func (s *DomainService) Start(_ context.Context) {
+	// Enable an automatic removal of expired items
+	go s.domainTTLCache.Start()
+}
+
+func (s *DomainService) Stop(_ context.Context) {
+	s.domainTTLCache.Stop()
 }
 
 func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
@@ -279,6 +296,11 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 }
 
 func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+	if cacheItem := s.domainTTLCache.Get(fqdn); cacheItem != nil {
+		domain := cacheItem.Value()
+		return &domain, nil
+	}
+
 	emitter := s.getEmitterClient(ctx)
 	dnsRecords, err := emitter.GetDNS(ctx, &GetDNSRequest{FQDN: fqdn})
 	if err != nil {
@@ -309,6 +331,9 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 			TXT:   dnsRecords.ResourceRecords.TXT,
 		},
 	}
+
+	s.domainTTLCache.Set(fqdn, *domain, ttlcache.DefaultTTL)
+
 	return domain, nil
 }
 

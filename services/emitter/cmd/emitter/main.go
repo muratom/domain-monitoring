@@ -55,7 +55,7 @@ func main() {
 	dnsService := dns.NewService(dnsclient.NewLibraryClient(5 * time.Second))
 
 	// TODO: set timeout by config
-	whoisClient := whoisclient.NewWhoisClient(1 * time.Second)
+	whoisClient := whoisclient.NewWhoisClient(5 * time.Second)
 	whoisService := whois.NewService(adapterprovider.NewHardcodeAdapterProvider(whoisClient, serverprovider.NewZoneDBServerProvider()))
 	emitterServer := server.NewEmitterServer(dnsService, whoisService)
 	pb.RegisterEmitterServer(grpcServer, emitterServer)

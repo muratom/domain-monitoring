@@ -11,6 +11,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"github.com/shirou/gopsutil/load"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -34,6 +35,14 @@ const (
 )
 
 func main() {
+	go func() {
+		for {
+			info, _ := load.Avg()
+			logrus.Infof("%v", info)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
+
 	tp := tracing.InitTracer("inspector", "http://jaeger:14268/api/traces")
 	defer func() {
 		err := tp.Shutdown(context.Background())
@@ -74,8 +83,9 @@ func main() {
 	}
 	logrus.Infof("successfully connect to a database")
 	repo := postgres.NewDomainRepository(dbConn)
+	ttlCache := service.NewLibDomainTTLCache()
 
-	domainService := service.NewDomainService(emitters, repo)
+	domainService := service.NewDomainService(emitters, repo, ttlCache)
 	domainService.Start(ctx)
 	defer domainService.Stop(ctx)
 

@@ -33,14 +33,15 @@ type DomainService struct {
 	emitterCounter   atomic.Uint32
 	domainRepository entity.DomainRepository
 	domainDiffer     domainDiffer
-	domainTTLCache   *ttlcache.Cache[string, entity.Domain]
+	domainTTLCache   domainTTLCache
 }
 
-func NewDomainService(emitterClients []EmitterClient, domainRepo entity.DomainRepository) *DomainService {
+func NewDomainService(
+	emitterClients []EmitterClient,
+	domainRepo entity.DomainRepository,
+	ttlCache domainTTLCache,
+) *DomainService {
 	differ := &libDomainDiffer{}
-	ttlCache := ttlcache.New(
-		ttlcache.WithTTL[string, entity.Domain](cacheTTL),
-	)
 
 	return &DomainService{
 		emitters:         emitterClients,
@@ -296,8 +297,8 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 }
 
 func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
-	if cacheItem := s.domainTTLCache.Get(fqdn); cacheItem != nil {
-		domain := cacheItem.Value()
+	if item := s.domainTTLCache.Get(fqdn); item != nil {
+		domain := item.Value()
 		return &domain, nil
 	}
 
@@ -332,7 +333,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 		},
 	}
 
-	s.domainTTLCache.Set(fqdn, *domain, ttlcache.DefaultTTL)
+	s.domainTTLCache.Set(fqdn, domain, ttlcache.DefaultTTL)
 
 	return domain, nil
 }

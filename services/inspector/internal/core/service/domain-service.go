@@ -93,6 +93,13 @@ func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*entity.Dom
 	return domain, err
 }
 
+func (s *DomainService) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetAllDomainsFQDN")
+	defer span.End()
+
+	return s.domainRepository.GetAllDomainsFQDN(ctx)
+}
+
 func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.UpdateDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),

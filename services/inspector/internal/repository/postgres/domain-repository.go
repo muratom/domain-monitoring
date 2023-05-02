@@ -106,6 +106,19 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 	return result, nil
 }
 
+func (r *DomainRepository) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
+	domainEntities, err := models.Domains().All(ctx, r.Conn)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching all domains FQDN: %w", err)
+	}
+
+	result := make([]string, len(domainEntities))
+	for i, domain := range domainEntities {
+		result[i] = domain.FQDN
+	}
+	return result, nil
+}
+
 func (r *DomainRepository) GetRottenDomainsFQDN(ctx context.Context) ([]string, error) {
 	rottenDomains, err := models.Domains(
 		qm.Where("(NOW() - updated_at) >= update_delay"),

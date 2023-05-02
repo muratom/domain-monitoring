@@ -17,6 +17,9 @@ type ServerInterface interface {
 	// Add domain
 	// (POST /v1/add-domain)
 	AddDomain(ctx echo.Context, params AddDomainParams) error
+	// Get all stored domains FQDN
+	// (GET /v1/all-domains)
+	GetAllDomains(ctx echo.Context) error
 	// Delete domain
 	// (POST /v1/delete-domain)
 	DeleteDomain(ctx echo.Context, params DeleteDomainParams) error
@@ -51,6 +54,15 @@ func (w *ServerInterfaceWrapper) AddDomain(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.AddDomain(ctx, params)
+	return err
+}
+
+// GetAllDomains converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAllDomains(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetAllDomains(ctx)
 	return err
 }
 
@@ -146,6 +158,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.POST(baseURL+"/v1/add-domain", wrapper.AddDomain)
+	router.GET(baseURL+"/v1/all-domains", wrapper.GetAllDomains)
 	router.POST(baseURL+"/v1/delete-domain", wrapper.DeleteDomain)
 	router.GET(baseURL+"/v1/domain", wrapper.GetDomain)
 	router.GET(baseURL+"/v1/ping", wrapper.Ping)

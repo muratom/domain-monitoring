@@ -59,6 +59,16 @@ func (s *InspectorServer) GetDomain(ctx echo.Context, params models.GetDomainPar
 	return ctx.JSON(http.StatusOK, domain)
 }
 
+func (s *InspectorServer) GetAllDomains(ctx echo.Context) error {
+	domains, err := s.domainService.GetAllDomainsFQDN(ctx.Request().Context())
+	if err != nil {
+		logrus.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, models.Error{Message: "failed to get all domains"})
+	}
+
+	return ctx.JSON(http.StatusOK, domains)
+}
+
 func (s *InspectorServer) UpdateDomain(ctx echo.Context, params models.UpdateDomainParams) error {
 	domain, err := s.domainService.UpdateDomain(ctx.Request().Context(), params.Fqdn)
 	if err != nil {

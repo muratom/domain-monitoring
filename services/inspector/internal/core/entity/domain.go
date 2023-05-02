@@ -97,6 +97,7 @@ var (
 
 type DomainRepository interface {
 	GetByFQDN(ctx context.Context, fqdn string) (*Domain, error)
+	GetAllDomainsFQDN(ctx context.Context) ([]string, error)
 	GetRottenDomainsFQDN(ctx context.Context) ([]string, error)
 	Store(ctx context.Context, domain *Domain) error
 	Update(ctx context.Context, domain *Domain, storedFQDN string) error

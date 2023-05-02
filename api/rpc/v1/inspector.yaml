@@ -2,6 +2,8 @@ openapi: "3.0.0"
 info:
   version: 1.0.0
   title: Inspector
+servers:
+  - url: http://localhost:8000
 paths:
   /v1/ping:
     get:
@@ -41,6 +43,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   
+  /v1/all-domains:
+    get:
+      summary: Get all stored domains FQDN
+      operationId: getAllDomains
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /v1/add-domain:
     post:
       summary: Add domain

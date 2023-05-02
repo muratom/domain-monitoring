@@ -20,7 +20,7 @@ func (d *libDomainDiffer) Diff(a, b *entity.Domain) (entity.Changelog, error) {
 		return nil, fmt.Errorf("finding diff of domain A (%+v) and B (%+v) was failed: %w", a, b, err)
 	}
 
-	changelog := make(entity.Changelog, len(diffResult))
+	changelog := make(entity.Changelog, 0, len(diffResult))
 	for _, diffRes := range diffResult {
 		newPath := filter(diffRes.Path, func(s string) bool {
 			_, err := strconv.Atoi(s)

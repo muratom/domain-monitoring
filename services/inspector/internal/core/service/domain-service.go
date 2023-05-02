@@ -68,12 +68,12 @@ func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Dom
 
 	domain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
+		return nil, fmt.Errorf("DomainService.AddDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
 	err = s.domainRepository.Store(ctx, domain)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
+		return nil, fmt.Errorf("DomainService.AddDomain: failed to store domain in the repository: %w", err)
 	}
 
 	return domain, nil
@@ -263,6 +263,13 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 		return nil, fmt.Errorf("error getting domain changes: %w", err)
 	}
 
+	if len(changelog) != 0 {
+		err := s.domainRepository.SaveChangelog(ctx, fqdn, &changelog)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save changelog: %w", err)
+		}
+	}
+
 	notifications := make([]entity.Notification, 0)
 	for _, change := range changelog {
 		switch change.FieldType {
@@ -333,7 +340,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 		},
 	}
 
-	s.domainTTLCache.Set(fqdn, domain, ttlcache.DefaultTTL)
+	s.domainTTLCache.Set(fqdn, *domain, ttlcache.DefaultTTL)
 
 	return domain, nil
 }

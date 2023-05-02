@@ -24,7 +24,7 @@ type domainTTLCache interface {
 	Start()
 	Stop()
 	Get(key string) *Item
-	Set(key string, value *entity.Domain, ttl time.Duration)
+	Set(key string, value entity.Domain, ttl time.Duration)
 }
 
 type libDomainTTLCache struct {
@@ -49,12 +49,15 @@ func (c *libDomainTTLCache) Stop() {
 
 func (c *libDomainTTLCache) Get(key string) *Item {
 	item := c.cache.Get(key)
+	if item == nil {
+		return nil
+	}
 	return &Item{
 		key:   item.Key(),
 		value: item.Value(),
 	}
 }
 
-func (c *libDomainTTLCache) Set(key string, value *entity.Domain, ttl time.Duration) {
-	c.cache.Set(key, *value, ttl)
+func (c *libDomainTTLCache) Set(key string, value entity.Domain, ttl time.Duration) {
+	c.cache.Set(key, value, ttl)
 }

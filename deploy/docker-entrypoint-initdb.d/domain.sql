@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS changelogs (
     PRIMARY KEY (id),
     FOREIGN KEY (domain_id)
         REFERENCES domains (id)
-        ON DELETE NO ACTION
+        ON DELETE CASCADE
 );
 
 INSERT INTO changelogs (

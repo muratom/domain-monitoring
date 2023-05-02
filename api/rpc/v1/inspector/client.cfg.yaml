@@ -1,0 +1,7 @@
+package: inspector
+output: ./client.gen.go
+additional-imports:
+  - package: github.com/muratom/domain-monitoring/api/rpc/v1/inspector/models
+    alias: .
+generate:
+  client: true

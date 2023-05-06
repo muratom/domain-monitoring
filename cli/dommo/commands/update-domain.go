@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
@@ -51,7 +52,11 @@ var updateDomainCmd = &cobra.Command{
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			fmt.Printf("error doing a request to server (%v): %v", serverURI, err)
+			if os.IsTimeout(err) {
+				fmt.Println("request timeout happened")
+			} else {
+				fmt.Printf("error doing a request to server (%v): %v", serverURI, err)
+			}
 			return
 		}
 

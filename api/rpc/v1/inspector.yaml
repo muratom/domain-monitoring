@@ -131,6 +131,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /v1/changelog:
+    get:
+      summary: Get domain's changelog
+      operationId: getChangelog
+      parameters:
+        - name: fqdn
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Changelog'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     MX:
@@ -256,6 +280,44 @@ components:
         whois:
           $ref: '#/components/schemas/WhoisRecords'
 
+    AnyValue:
+      description: Can be any value, including `null`.
+    
+    FieldType:
+      type: string
+      enum:
+        - fqdn
+        - whois
+        - dns
+
+    OperationType:
+      type: string
+      enum:
+        - create
+        - update
+        - delete
+
+    Changelog:
+      type: object
+      required:
+        - to
+        - from
+        - path
+        - field_type
+        - operation_type
+      properties:
+        to:
+          $ref: '#/components/schemas/AnyValue'
+        from:
+          $ref: '#/components/schemas/AnyValue'
+        path:
+          type: array
+          items:
+            type: string
+        field_type:
+          $ref: '#/components/schemas/FieldType'
+        operation_type:
+          $ref: '#/components/schemas/OperationType'
     Error:
       required:
         - code

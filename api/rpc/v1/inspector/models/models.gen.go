@@ -7,6 +7,36 @@ import (
 	"time"
 )
 
+// Defines values for FieldType.
+const (
+	Dns   FieldType = "dns"
+	Fqdn  FieldType = "fqdn"
+	Whois FieldType = "whois"
+)
+
+// Defines values for OperationType.
+const (
+	Create OperationType = "create"
+	Delete OperationType = "delete"
+	Update OperationType = "update"
+)
+
+// AnyValue Can be any value, including `null`.
+type AnyValue = interface{}
+
+// Changelog defines model for Changelog.
+type Changelog struct {
+	FieldType FieldType `json:"field_type"`
+
+	// From Can be any value, including `null`.
+	From          AnyValue      `json:"from"`
+	OperationType OperationType `json:"operation_type"`
+	Path          []string      `json:"path"`
+
+	// To Can be any value, including `null`.
+	To AnyValue `json:"to"`
+}
+
 // Domain defines model for Domain.
 type Domain struct {
 	Dns   ResourceRecords `json:"dns"`
@@ -20,6 +50,9 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// FieldType defines model for FieldType.
+type FieldType string
+
 // MX defines model for MX.
 type MX struct {
 	Host string `json:"host"`
@@ -32,6 +65,9 @@ type MX struct {
 type NS struct {
 	Host string `json:"host"`
 }
+
+// OperationType defines model for OperationType.
+type OperationType string
 
 // ResourceRecords defines model for ResourceRecords.
 type ResourceRecords struct {
@@ -82,6 +118,11 @@ type WhoisRecords struct {
 
 // AddDomainParams defines parameters for AddDomain.
 type AddDomainParams struct {
+	Fqdn string `form:"fqdn" json:"fqdn"`
+}
+
+// GetChangelogParams defines parameters for GetChangelog.
+type GetChangelogParams struct {
 	Fqdn string `form:"fqdn" json:"fqdn"`
 }
 

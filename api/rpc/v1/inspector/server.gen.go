@@ -20,6 +20,9 @@ type ServerInterface interface {
 	// Get all stored domains FQDN
 	// (GET /v1/all-domains)
 	GetAllDomains(ctx echo.Context) error
+	// Get domain's changelog
+	// (GET /v1/changelog)
+	GetChangelog(ctx echo.Context, params GetChangelogParams) error
 	// Delete domain
 	// (POST /v1/delete-domain)
 	DeleteDomain(ctx echo.Context, params DeleteDomainParams) error
@@ -63,6 +66,24 @@ func (w *ServerInterfaceWrapper) GetAllDomains(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetAllDomains(ctx)
+	return err
+}
+
+// GetChangelog converts echo context to params.
+func (w *ServerInterfaceWrapper) GetChangelog(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetChangelogParams
+	// ------------- Required query parameter "fqdn" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "fqdn", ctx.QueryParams(), &params.Fqdn)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fqdn: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetChangelog(ctx, params)
 	return err
 }
 
@@ -159,6 +180,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.POST(baseURL+"/v1/add-domain", wrapper.AddDomain)
 	router.GET(baseURL+"/v1/all-domains", wrapper.GetAllDomains)
+	router.GET(baseURL+"/v1/changelog", wrapper.GetChangelog)
 	router.POST(baseURL+"/v1/delete-domain", wrapper.DeleteDomain)
 	router.GET(baseURL+"/v1/domain", wrapper.GetDomain)
 	router.GET(baseURL+"/v1/ping", wrapper.Ping)

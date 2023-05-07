@@ -10,7 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/lib/pq v1.10.6
 	github.com/muratom/domain-monitoring/api/proto/v1/emitter v0.0.0-20230416104659-5d5ea09aa637
-	github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230502064936-e93d19e6d6d9
+	github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507224844-963179971e5b
 	github.com/r3labs/diff v1.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
@@ -49,10 +49,10 @@ require (
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )

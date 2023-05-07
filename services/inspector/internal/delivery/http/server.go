@@ -82,6 +82,16 @@ func (s *InspectorServer) UpdateDomain(ctx echo.Context, params models.UpdateDom
 	return ctx.JSON(http.StatusOK, domain)
 }
 
+func (s *InspectorServer) GetChangelogs(ctx echo.Context, params models.GetChangelogsParams) error {
+	changelogs, err := s.domainService.GetChangelogs(ctx.Request().Context(), params.Fqdn)
+	if err != nil {
+		logrus.Error(err)
+		return ctx.JSON(http.StatusInternalServerError, models.Error{Message: "failed to get domain's changelogs"})
+	}
+
+	return ctx.JSON(http.StatusOK, changelogs)
+}
+
 func (s *InspectorServer) Ping(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, "pong")
 }

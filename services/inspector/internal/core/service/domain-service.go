@@ -156,6 +156,13 @@ func (s *DomainService) GetRottenDomainsFQDN(ctx context.Context) ([]string, err
 	return s.domainRepository.GetRottenDomainsFQDN(ctx)
 }
 
+func (s *DomainService) GetChangelogs(ctx context.Context, fqdn string) ([]entity.Changelog, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetChangelogs")
+	defer span.End()
+
+	return s.domainRepository.GetChangelogs(ctx, fqdn)
+}
+
 type dnsResult struct {
 	response *GetDNSResponse
 	request  *GetDNSRequest
@@ -296,7 +303,7 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 	}
 
 	if len(changelog) != 0 {
-		err := s.domainRepository.SaveChangelog(ctx, fqdn, &changelog)
+		err := s.domainRepository.SaveChangelog(ctx, fqdn, changelog)
 		if err != nil {
 			return nil, fmt.Errorf("failed to save changelog: %w", err)
 		}

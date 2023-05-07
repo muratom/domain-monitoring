@@ -102,5 +102,6 @@ type DomainRepository interface {
 	Store(ctx context.Context, domain *Domain) error
 	Update(ctx context.Context, domain *Domain, storedFQDN string) error
 	Delete(ctx context.Context, fqdn string) error
-	SaveChangelog(ctx context.Context, fqdn string, changelog *Changelog) error
+	SaveChangelog(ctx context.Context, fqdn string, changelog Changelog) error
+	GetChangelogs(ctx context.Context, fqdn string) ([]Changelog, error)
 }

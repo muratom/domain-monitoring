@@ -254,7 +254,7 @@ func (r *DomainRepository) Delete(ctx context.Context, fqdn string) error {
 	return nil
 }
 
-func (r *DomainRepository) SaveChangelog(ctx context.Context, fqdn string, changelog *entity.Changelog) error {
+func (r *DomainRepository) SaveChangelog(ctx context.Context, fqdn string, changelog entity.Changelog) error {
 	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
 	if err != nil {
 		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", fqdn, err)
@@ -270,4 +270,31 @@ func (r *DomainRepository) SaveChangelog(ctx context.Context, fqdn string, chang
 	}
 
 	return domainEntry.AddChangelogs(ctx, r.Conn, true, changelogEntry)
+}
+
+func (r *DomainRepository) GetChangelogs(ctx context.Context, fqdn string) ([]entity.Changelog, error) {
+	domainEntry, err := models.Domains(
+		models.DomainWhere.FQDN.EQ(fqdn),
+		qm.Load(models.DomainRels.Changelogs),
+	).One(ctx, r.Conn)
+	if err == sql.ErrNoRows {
+		return []entity.Changelog{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get changelog for FQDN (%v): %w", fqdn, err)
+	}
+
+	result := make([]entity.Changelog, 0, 10)
+	for _, changelogEntry := range domainEntry.R.Changelogs {
+		if changelogEntry != nil {
+			var changelog entity.Changelog
+			err := changelogEntry.Changes.Unmarshal(&changelog)
+			if err != nil {
+				return nil, fmt.Errorf("unable to unmarshal changelog from DB: %w", err)
+			}
+			result = append(result, changelog)
+		}
+	}
+
+	return result, nil
 }

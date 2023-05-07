@@ -15,6 +15,7 @@ type DomainService interface {
 	DeleteDomain(ctx context.Context, fqdn string) error
 	GetAllDomainsFQDN(ctx context.Context) ([]string, error)
 	GetRottenDomainsFQDN(ctx context.Context) ([]string, error)
+	GetChangelogs(ctx context.Context, fqdn string) ([]entity.Changelog, error)
 	CheckDomainNameServers(ctx context.Context, fqdn string) ([]entity.Notification, error)
 	CheckDomainRegistration(ctx context.Context, fqdn string) ([]entity.Notification, error)
 	CheckDomainChanges(ctx context.Context, fqdn string) ([]entity.Notification, error)

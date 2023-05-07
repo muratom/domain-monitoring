@@ -95,8 +95,8 @@ type ClientInterface interface {
 	// GetAllDomains request
 	GetAllDomains(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetChangelog request
-	GetChangelog(ctx context.Context, params *GetChangelogParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetChangelogs request
+	GetChangelogs(ctx context.Context, params *GetChangelogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteDomain request
 	DeleteDomain(ctx context.Context, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -135,8 +135,8 @@ func (c *Client) GetAllDomains(ctx context.Context, reqEditors ...RequestEditorF
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetChangelog(ctx context.Context, params *GetChangelogParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetChangelogRequest(c.Server, params)
+func (c *Client) GetChangelogs(ctx context.Context, params *GetChangelogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetChangelogsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -265,8 +265,8 @@ func NewGetAllDomainsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewGetChangelogRequest generates requests for GetChangelog
-func NewGetChangelogRequest(server string, params *GetChangelogParams) (*http.Request, error) {
+// NewGetChangelogsRequest generates requests for GetChangelogs
+func NewGetChangelogsRequest(server string, params *GetChangelogsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -274,7 +274,7 @@ func NewGetChangelogRequest(server string, params *GetChangelogParams) (*http.Re
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/v1/changelog")
+	operationPath := fmt.Sprintf("/v1/changelogs")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -513,8 +513,8 @@ type ClientWithResponsesInterface interface {
 	// GetAllDomains request
 	GetAllDomainsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetAllDomainsResponse, error)
 
-	// GetChangelog request
-	GetChangelogWithResponse(ctx context.Context, params *GetChangelogParams, reqEditors ...RequestEditorFn) (*GetChangelogResponse, error)
+	// GetChangelogs request
+	GetChangelogsWithResponse(ctx context.Context, params *GetChangelogsParams, reqEditors ...RequestEditorFn) (*GetChangelogsResponse, error)
 
 	// DeleteDomain request
 	DeleteDomainWithResponse(ctx context.Context, params *DeleteDomainParams, reqEditors ...RequestEditorFn) (*DeleteDomainResponse, error)
@@ -575,15 +575,15 @@ func (r GetAllDomainsResponse) StatusCode() int {
 	return 0
 }
 
-type GetChangelogResponse struct {
+type GetChangelogsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Changelog
+	JSON200      *Changelogs
 	JSONDefault  *Error
 }
 
 // Status returns HTTPResponse.Status
-func (r GetChangelogResponse) Status() string {
+func (r GetChangelogsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -591,7 +591,7 @@ func (r GetChangelogResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetChangelogResponse) StatusCode() int {
+func (r GetChangelogsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -706,13 +706,13 @@ func (c *ClientWithResponses) GetAllDomainsWithResponse(ctx context.Context, req
 	return ParseGetAllDomainsResponse(rsp)
 }
 
-// GetChangelogWithResponse request returning *GetChangelogResponse
-func (c *ClientWithResponses) GetChangelogWithResponse(ctx context.Context, params *GetChangelogParams, reqEditors ...RequestEditorFn) (*GetChangelogResponse, error) {
-	rsp, err := c.GetChangelog(ctx, params, reqEditors...)
+// GetChangelogsWithResponse request returning *GetChangelogsResponse
+func (c *ClientWithResponses) GetChangelogsWithResponse(ctx context.Context, params *GetChangelogsParams, reqEditors ...RequestEditorFn) (*GetChangelogsResponse, error) {
+	rsp, err := c.GetChangelogs(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetChangelogResponse(rsp)
+	return ParseGetChangelogsResponse(rsp)
 }
 
 // DeleteDomainWithResponse request returning *DeleteDomainResponse
@@ -817,22 +817,22 @@ func ParseGetAllDomainsResponse(rsp *http.Response) (*GetAllDomainsResponse, err
 	return response, nil
 }
 
-// ParseGetChangelogResponse parses an HTTP response from a GetChangelogWithResponse call
-func ParseGetChangelogResponse(rsp *http.Response) (*GetChangelogResponse, error) {
+// ParseGetChangelogsResponse parses an HTTP response from a GetChangelogsWithResponse call
+func ParseGetChangelogsResponse(rsp *http.Response) (*GetChangelogsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetChangelogResponse{
+	response := &GetChangelogsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Changelog
+		var dest Changelogs
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

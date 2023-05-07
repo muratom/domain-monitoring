@@ -37,6 +37,9 @@ type Changelog struct {
 	To AnyValue `json:"to"`
 }
 
+// Changelogs defines model for Changelogs.
+type Changelogs = []Changelog
+
 // Domain defines model for Domain.
 type Domain struct {
 	Dns   ResourceRecords `json:"dns"`
@@ -121,8 +124,8 @@ type AddDomainParams struct {
 	Fqdn string `form:"fqdn" json:"fqdn"`
 }
 
-// GetChangelogParams defines parameters for GetChangelog.
-type GetChangelogParams struct {
+// GetChangelogsParams defines parameters for GetChangelogs.
+type GetChangelogsParams struct {
 	Fqdn string `form:"fqdn" json:"fqdn"`
 }
 

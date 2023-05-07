@@ -14,6 +14,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // TODO: split this file in multiple parts
@@ -135,19 +138,25 @@ func (r *DomainRepository) GetRottenDomainsFQDN(ctx context.Context) ([]string, 
 }
 
 func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) (err error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainRepository.Store", trace.WithAttributes(
+		attribute.String("FQDN", domain.FQDN),
+	))
+	defer span.End()
+
 	domainEntry := models.Domain{
 		FQDN:        domain.FQDN,
 		UpdatedAt:   time.Now(),
 		UpdateDelay: "1W", // TODO: move to function parameters
 	}
 
-	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer func() {
 		if err != nil {
+			logrus.Error("error stroing domain: %v", err)
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
 				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))
@@ -185,13 +194,14 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", storedFQDN, err)
 	}
 
-	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	tx, err := r.Conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	defer func() {
 		if err != nil {
+			logrus.Error("error updating domain: %v", err)
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
 				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))

@@ -11,12 +11,12 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
-	"github.com/shirou/gopsutil/load"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
@@ -32,16 +32,20 @@ import (
 
 const (
 	emitterClientTimeout = 10 * time.Second
+	workerPoolSize       = 5
 )
 
 func main() {
-	go func() {
-		for {
-			info, _ := load.Avg()
-			logrus.Infof("%v", info)
-			time.Sleep(500 * time.Millisecond)
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		info, _ := load.Avg()
+	// 		logrus.Infof("%v", info)
+	// 		v, _ := mem.VirtualMemory()
+	// 		fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+
+	// 		time.Sleep(500 * time.Millisecond)
+	// 	}
+	// }()
 
 	tp := tracing.InitTracer("inspector", "http://jaeger:14268/api/traces")
 	defer func() {
@@ -68,7 +72,9 @@ func main() {
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithChainUnaryInterceptor(
 				timeout.UnaryClientInterceptor(emitterClientTimeout),
-				otelgrpc.UnaryClientInterceptor()),
+				otelgrpc.UnaryClientInterceptor(),
+				retry.UnaryClientInterceptor(retry.WithBackoff(retry.BackoffExponential(100*time.Millisecond))),
+			),
 		)
 		if err != nil {
 			logrus.Fatalf("unable to connect to the emitter: %v", err)
@@ -96,12 +102,13 @@ func main() {
 		// mailNotifier,
 	}
 
-	ticker := time.After(2 * time.Second)
+	ticker := time.Tick(1 * time.Minute)
 	go func() {
 		logrus.Infof("starting cron")
 		for {
 			select {
 			case <-ticker:
+				st := time.Now()
 				ctx, span := tracer.Start(ctx, "tick")
 				logrus.Infof("Tick")
 				rottenFQDNs, err := domainService.GetRottenDomainsFQDN(ctx)
@@ -109,8 +116,9 @@ func main() {
 					logrus.Warnf("failed to get rotten domains' FQDNs: %v", err)
 					continue
 				}
+				span.SetAttributes(attribute.StringSlice("rotten_fqdns", rottenFQDNs))
 
-				wp := workerpool.New(len(rottenFQDNs))
+				wp := workerpool.New(workerPoolSize)
 				checkResults := make(chan checkResult, len(rottenFQDNs))
 				for _, fqdn := range rottenFQDNs {
 					fqdn := fqdn
@@ -163,6 +171,7 @@ func main() {
 					}
 				}
 				span.End()
+				logrus.Info(fmt.Sprintf("elapsed time: %v", time.Now().Sub(st)))
 			case <-ctx.Done():
 				logrus.Infof("ticker is stopping...")
 				return

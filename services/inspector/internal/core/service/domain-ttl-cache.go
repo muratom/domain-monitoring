@@ -40,7 +40,7 @@ func NewLibDomainTTLCache() *libDomainTTLCache {
 }
 
 func (c *libDomainTTLCache) Start() {
-	c.cache.Start()
+	go c.cache.Start()
 }
 
 func (c *libDomainTTLCache) Stop() {

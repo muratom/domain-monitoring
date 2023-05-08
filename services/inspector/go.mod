@@ -10,7 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/lib/pq v1.10.9
 	github.com/muratom/domain-monitoring/api/proto/v1/emitter v0.0.0-20230507234547-4ab1ba2235ae
-	github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507224844-963179971e5b
+	github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507235718-6e1cb8f0b64e
 	github.com/r3labs/diff v1.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/volatiletech/sqlboiler/v4 v4.14.2

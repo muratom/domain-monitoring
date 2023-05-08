@@ -297,7 +297,7 @@ components:
         - update
         - delete
 
-    Changelog:
+    Change:
       type: object
       required:
         - to
@@ -318,6 +318,11 @@ components:
           $ref: '#/components/schemas/FieldType'
         operation_type:
           $ref: '#/components/schemas/OperationType'
+
+    Changelog:
+      type: array
+      items:
+        $ref: '#/components/schemas/Change'
 
     Changelogs:
       type: array

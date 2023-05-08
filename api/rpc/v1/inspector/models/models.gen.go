@@ -24,8 +24,8 @@ const (
 // AnyValue Can be any value, including `null`.
 type AnyValue = interface{}
 
-// Changelog defines model for Changelog.
-type Changelog struct {
+// Change defines model for Change.
+type Change struct {
 	FieldType FieldType `json:"field_type"`
 
 	// From Can be any value, including `null`.
@@ -36,6 +36,9 @@ type Changelog struct {
 	// To Can be any value, including `null`.
 	To AnyValue `json:"to"`
 }
+
+// Changelog defines model for Changelog.
+type Changelog = []Change
 
 // Changelogs defines model for Changelogs.
 type Changelogs = []Changelog

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/notifier/stdout"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -21,7 +22,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
-	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter-client"
+	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter"
 	inspectorserver "github.com/muratom/domain-monitoring/services/inspector/internal/delivery/http"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres"
 	"github.com/muratom/domain-monitoring/services/inspector/tools/tracing"
@@ -79,14 +80,13 @@ func main() {
 	logrus.Infof("successfully connect to a database")
 	domainRepository := postgres.NewDomainRepository(dbConn)
 	changelogRepository := postgres.NewChangelogRepository(dbConn)
-	ttlCache := service.NewLibDomainTTLCache()
 
-	domainService := service.NewDomainService(emitters, domainRepository, changelogRepository, ttlCache)
+	domainService := service.NewDomainService(emitters, domainRepository, changelogRepository)
 	domainService.Start(ctx)
 	defer domainService.Stop(ctx)
 
 	// mailNotifier := service.NewMailNotifier("<from>", "<to>", "<username>", "<password>", "<smtp_host>", 42)
-	stdoutNotifier := &service.StdoutNotifier{}
+	stdoutNotifier := stdout.New()
 	notifiers := []service.Notifier{
 		stdoutNotifier,
 		// mailNotifier,

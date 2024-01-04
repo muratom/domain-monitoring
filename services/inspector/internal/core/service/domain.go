@@ -9,12 +9,13 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/cache/ttl"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/differ/lib"
 	"sort"
 	"sync/atomic"
 	"time"
 
 	"github.com/gammazero/workerpool"
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -24,60 +25,57 @@ import (
 
 // TODO: set by config
 const (
-	cacheTTL                = 1 * time.Minute
 	workerPoolSize          = 5
 	emitterClientTimeout    = 3 * time.Second
 	expiringDomainThreshold = 30 * 24 * time.Hour // 1 month
 )
 
 type DomainService struct {
-	emitters            []EmitterClient
-	emitterCounter      atomic.Uint32
+	emitters       []EmitterClient
+	emitterCounter atomic.Uint32
+
 	domainRepository    domain.CRUDRepository
 	changelogRepository changelog.Repository
-	domainDiffer        domainDiffer
-	domainTTLCache      domainTTLCache
 
-	// TODO: add abstraction
-	dnsCache   *ttlcache.Cache[GetDNSRequest, GetDNSResponse]
-	whoisCache *ttlcache.Cache[GetWhoisRequest, GetWhoisResponse]
+	domainDiffer DomainDiffer
+
+	domainCache Cache[string, domain.Domain]
+	dnsCache    Cache[GetDNSRequest, GetDNSResponse]
+	whoisCache  Cache[GetWhoisRequest, GetWhoisResponse]
 }
 
 func NewDomainService(
 	emitterClients []EmitterClient,
 	domainRepo domain.CRUDRepository,
 	changelogRepo changelog.Repository,
-	ttlCache domainTTLCache,
+	opts ...Option,
 ) *DomainService {
-	differ := &libDomainDiffer{}
-
-	return &DomainService{
+	service := &DomainService{
 		emitters:            emitterClients,
 		domainRepository:    domainRepo,
 		changelogRepository: changelogRepo,
-		domainDiffer:        differ,
-		domainTTLCache:      ttlCache,
-
-		dnsCache: ttlcache.New(
-			ttlcache.WithTTL[GetDNSRequest, GetDNSResponse](cacheTTL),
-		),
-		whoisCache: ttlcache.New(
-			ttlcache.WithTTL[GetWhoisRequest, GetWhoisResponse](cacheTTL),
-		),
+		domainDiffer:        &lib.Differ{},
+		domainCache:         ttl.New[string, domain.Domain](),
+		dnsCache:            ttl.New[GetDNSRequest, GetDNSResponse](),
+		whoisCache:          ttl.New[GetWhoisRequest, GetWhoisResponse](),
 	}
+
+	for _, opt := range opts {
+		opt(service)
+	}
+
+	return service
 }
 
 func (s *DomainService) Start(_ context.Context) {
 	// Enable an automatic removal of expired items
-	s.domainTTLCache.Start()
-
-	go s.dnsCache.Start()
-	go s.whoisCache.Start()
+	s.domainCache.Start()
+	s.dnsCache.Start()
+	s.whoisCache.Start()
 }
 
 func (s *DomainService) Stop(_ context.Context) {
-	s.domainTTLCache.Stop()
-
+	s.domainCache.Stop()
 	s.dnsCache.Stop()
 	s.whoisCache.Stop()
 }
@@ -167,16 +165,6 @@ func (s *DomainService) GetChangelogs(ctx context.Context, fqdn string) ([]chang
 
 	return s.changelogRepository.Retrieve(ctx, fqdn)
 }
-
-type dnsResult struct {
-	response *GetDNSResponse
-	request  *GetDNSRequest
-	err      error
-}
-
-var (
-	errStopServing = errors.New("DNS server stopped serving a domain")
-)
 
 func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string) ([]notification.Notification, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainNameServers", trace.WithAttributes(
@@ -347,26 +335,15 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 	return notifications, nil
 }
 
-type dnsResponse struct {
-	response *GetDNSResponse
-	err      error
-}
-
-type whoisResponse struct {
-	response *GetWhoisResponse
-	err      error
-}
-
 func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.getUpdatedDomain", trace.WithAttributes(
 		attribute.Bool("from_cache", false),
 	))
 	defer span.End()
 
-	if item := s.domainTTLCache.Get(fqdn); item != nil {
+	if cachedDomain := s.domainCache.Get(fqdn); cachedDomain != nil {
 		span.SetAttributes(attribute.Bool("from_cache", true))
-		cachedDomain := item.Value()
-		return &cachedDomain, nil
+		return cachedDomain, nil
 	}
 
 	dnsChan := make(chan dnsResponse)
@@ -387,17 +364,17 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*dom
 		}
 	}()
 
-	dnsResponse := <-dnsChan
-	if dnsResponse.err != nil {
-		return nil, fmt.Errorf("failed to get updated DNS records: %v", dnsResponse.err)
+	dnsResp := <-dnsChan
+	if dnsResp.err != nil {
+		return nil, fmt.Errorf("failed to get updated DNS records: %v", dnsResp.err)
 	}
-	dnsRecords := dnsResponse.response
+	dnsRecords := dnsResp.response
 
-	whoisResponse := <-whoisChan
-	if whoisResponse.err != nil {
-		return nil, fmt.Errorf("failed to get updated Whois records: %v", whoisResponse.err)
+	whoisResp := <-whoisChan
+	if whoisResp.err != nil {
+		return nil, fmt.Errorf("failed to get updated Whois records: %v", whoisResp.err)
 	}
-	whoisRecords := whoisResponse.response
+	whoisRecords := whoisResp.response
 
 	updatedDomain := &domain.Domain{
 		FQDN: fqdn,
@@ -419,7 +396,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*dom
 		},
 	}
 
-	s.domainTTLCache.Set(fqdn, *updatedDomain, ttlcache.DefaultTTL)
+	s.domainCache.Set(fqdn, *updatedDomain)
 
 	return updatedDomain, nil
 }
@@ -448,39 +425,37 @@ func (s *DomainService) getEmitterClient(ctx context.Context) EmitterClient {
 }
 
 func (s *DomainService) getDNS(ctx context.Context, req GetDNSRequest) (*GetDNSResponse, error) {
-	if item := s.dnsCache.Get(req); item != nil {
+	if resp := s.dnsCache.Get(req); resp != nil {
 		logrus.Info("retrieve DNS response from cache for req (%+v)", req)
-		dnsResponse := item.Value()
-		return &dnsResponse, nil
+		return resp, nil
 	}
 
 	emitter := s.getEmitterClient(ctx)
-	dnsResponse, err := emitter.GetDNS(ctx, &req)
+	resp, err := emitter.GetDNS(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated DNS records: %w", err)
 	}
 
-	s.dnsCache.Set(req, *dnsResponse, ttlcache.DefaultTTL)
+	s.dnsCache.Set(req, *resp)
 
-	return dnsResponse, nil
+	return resp, nil
 }
 
 func (s *DomainService) getWhois(ctx context.Context, req GetWhoisRequest) (*GetWhoisResponse, error) {
-	if item := s.whoisCache.Get(req); item != nil {
+	if resp := s.whoisCache.Get(req); resp != nil {
 		logrus.Info("retrieve Whois response from cache for req (%+v)", req)
-		whoisResponse := item.Value()
-		return &whoisResponse, nil
+		return resp, nil
 	}
 
 	emitter := s.getEmitterClient(ctx)
-	whoisResponse, err := emitter.GetWhois(ctx, &req)
+	resp, err := emitter.GetWhois(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get updated Whois records: %w", err)
 	}
 
-	s.whoisCache.Set(req, *whoisResponse, ttlcache.DefaultTTL)
+	s.whoisCache.Set(req, *resp)
 
-	return whoisResponse, nil
+	return resp, nil
 }
 
 func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []string) {
@@ -509,6 +484,22 @@ func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []st
 	} else {
 		return false, syncWithBase
 	}
+}
+
+type dnsResult struct {
+	response *GetDNSResponse
+	request  *GetDNSRequest
+	err      error
+}
+
+type dnsResponse struct {
+	response *GetDNSResponse
+	err      error
+}
+
+type whoisResponse struct {
+	response *GetWhoisResponse
+	err      error
 }
 
 func compareResourceRecords(x, y dns.ResourceRecords) bool {

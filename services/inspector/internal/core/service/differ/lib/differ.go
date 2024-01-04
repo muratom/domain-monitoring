@@ -1,21 +1,16 @@
-package service
+package lib
 
 import (
 	"fmt"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/changelog"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
-	"strconv"
-
 	"github.com/r3labs/diff"
+	"strconv"
 )
 
-type domainDiffer interface {
-	Diff(a, b *domain.Domain) (changelog.Changelog, error)
-}
+type Differ struct{}
 
-type libDomainDiffer struct{}
-
-func (d *libDomainDiffer) Diff(a, b *domain.Domain) (changelog.Changelog, error) {
+func (d *Differ) Diff(a, b *domain.Domain) (changelog.Changelog, error) {
 	diffResult, err := diff.Diff(a, b)
 	if err != nil {
 		return nil, fmt.Errorf("finding diff of domain A (%+v) and B (%+v) was failed: %w", a, b, err)

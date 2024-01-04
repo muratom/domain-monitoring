@@ -1,27 +1,12 @@
-package service
+package mail
 
 import (
 	"fmt"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
-
 	"gopkg.in/gomail.v2"
 )
 
-// TODO: move to App.New
-type Notifier interface {
-	Notify(notifications []notification.Notification) error
-}
-
-type StdoutNotifier struct{}
-
-func (s *StdoutNotifier) Notify(notifications []notification.Notification) error {
-	for _, notification := range notifications {
-		fmt.Println(notification.AsHumanReadable())
-	}
-	return nil
-}
-
-type MailNotifier struct {
+type Notifier struct {
 	from     string
 	to       string
 	username string
@@ -30,8 +15,8 @@ type MailNotifier struct {
 	smtpPort int
 }
 
-func NewMailNotifier(from, to, username, password, smtpHost string, smtpPort int) *MailNotifier {
-	return &MailNotifier{
+func New(from, to, username, password, smtpHost string, smtpPort int) *Notifier {
+	return &Notifier{
 		from:     from,
 		to:       to,
 		username: username,
@@ -41,7 +26,7 @@ func NewMailNotifier(from, to, username, password, smtpHost string, smtpPort int
 	}
 }
 
-func (s *MailNotifier) Notify(notifications []notification.Notification) error {
+func (s *Notifier) Notify(notifications []notification.Notification) error {
 	m := gomail.NewMessage()
 	m.SetHeaders(map[string][]string{
 		"From":    {s.from},
@@ -49,8 +34,8 @@ func (s *MailNotifier) Notify(notifications []notification.Notification) error {
 		"Subject": {"Notification from domain-monitoring"},
 	})
 	var body string
-	for _, notification := range notifications {
-		body += fmt.Sprintf("%s\n", notification.AsHumanReadable())
+	for _, n := range notifications {
+		body += fmt.Sprintf("%s\n", n.AsHumanReadable())
 	}
 	if len(body) == 0 {
 		return nil

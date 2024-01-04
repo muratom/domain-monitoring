@@ -40,6 +40,10 @@ func (r *ChangelogRepository) Store(ctx context.Context, fqdn string, changelog 
 }
 
 func (r *ChangelogRepository) Retrieve(ctx context.Context, fqdn string) ([]changelog.Changelog, error) {
+	const (
+		resultCapacity = 10
+	)
+
 	domainEntry, err := models.Domains(
 		models.DomainWhere.FQDN.EQ(fqdn),
 		qm.Load(models.DomainRels.Changelogs),
@@ -51,7 +55,7 @@ func (r *ChangelogRepository) Retrieve(ctx context.Context, fqdn string) ([]chan
 		return nil, fmt.Errorf("failed to get changelog for FQDN (%v): %w", fqdn, err)
 	}
 
-	result := make([]changelog.Changelog, 0, 10)
+	result := make([]changelog.Changelog, 0, resultCapacity)
 	for _, changelogEntry := range domainEntry.R.Changelogs {
 		if changelogEntry != nil {
 			var changes changelog.Changelog

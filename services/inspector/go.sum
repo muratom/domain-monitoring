@@ -383,8 +383,6 @@ github.com/modocache/gover v0.0.0-20171022184752-b58185e213c5/go.mod h1:caMODM3P
 github.com/montanaflynn/stats v0.6.6/go.mod h1:etXPPgVO6n31NxCd9KQUMvCM+ve0ruNzt6R8Bnaayow=
 github.com/muratom/domain-monitoring/api/proto/v1/emitter v0.0.0-20230507234547-4ab1ba2235ae h1:e3HDPcQm5OA8IdeGIQmnNXNUqMSilI60DIv/9up3LAs=
 github.com/muratom/domain-monitoring/api/proto/v1/emitter v0.0.0-20230507234547-4ab1ba2235ae/go.mod h1:A7YhJk0q8LguuLy4q/L+MUw+9JYp2bIyo159curWC/U=
-github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507224844-963179971e5b h1:Z5VKN3crrrjiEx2xln8BOE29cmKMTaKyKWN+OKUzA6s=
-github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507224844-963179971e5b/go.mod h1:07LtyDb1lW1dTEpANoG3im7iJsCjm5fsvrTZlw47ZUI=
 github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507235718-6e1cb8f0b64e h1:NjpbS1nf0pZCXmL7ZgcXEzwVWGuBUVmUdGBo6jVo49A=
 github.com/muratom/domain-monitoring/api/rpc/v1/inspector v0.0.0-20230507235718-6e1cb8f0b64e/go.mod h1:9EV6h2zLVlXrRsHKAqST+sgMXe6MRNWWKheKBNyNmgs=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=

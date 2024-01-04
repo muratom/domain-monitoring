@@ -5,6 +5,25 @@ import (
 	"strings"
 )
 
+type ResourceRecords struct {
+	A     []string
+	AAAA  []string
+	CNAME string
+	MX    MXSlice
+	NS    NSSlice
+	SRV   SRVSlice
+	TXT   []string
+}
+
+func (rr *ResourceRecords) Sort() {
+	sort.Strings(rr.A)
+	sort.Strings(rr.AAAA)
+	sort.Sort(rr.MX)
+	sort.Sort(rr.NS)
+	sort.Sort(rr.SRV)
+	sort.Strings(rr.TXT)
+}
+
 type MX struct {
 	Host string
 	Pref uint16
@@ -79,23 +98,4 @@ func (s SRVSlice) Less(i, j int) bool {
 
 func (s SRVSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
-}
-
-type ResourceRecords struct {
-	A     []string
-	AAAA  []string
-	CNAME string
-	MX    MXSlice
-	NS    NSSlice
-	SRV   SRVSlice
-	TXT   []string
-}
-
-func (rr *ResourceRecords) Sort() {
-	sort.Strings(rr.A)
-	sort.Strings(rr.AAAA)
-	sort.Sort(rr.MX)
-	sort.Sort(rr.NS)
-	sort.Sort(rr.SRV)
-	sort.Strings(rr.TXT)
 }

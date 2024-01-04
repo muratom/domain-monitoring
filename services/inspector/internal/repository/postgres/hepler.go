@@ -5,15 +5,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres/models"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-func (r *DomainRepository) prepareDomainEntry(ctx context.Context, fqdn string) (*models.Domain, error) {
-	domain, err := models.Domains(
+func prepareDomainEntry(ctx context.Context, fqdn string, exec boil.ContextExecutor) (*models.Domain, error) {
+	retrievedDomain, err := models.Domains(
 		models.DomainWhere.FQDN.EQ(fqdn),
 		qm.Load(models.DomainRels.Ipv4Addresses),
 		qm.Load(models.DomainRels.Ipv6Addresses),
@@ -23,14 +24,14 @@ func (r *DomainRepository) prepareDomainEntry(ctx context.Context, fqdn string) 
 		qm.Load(models.DomainRels.ServerSelections),
 		qm.Load(models.DomainRels.TextStrings),
 		qm.Load(models.DomainRels.Registrations),
-	).One(ctx, r.Conn)
+	).One(ctx, exec)
 	if err == sql.ErrNoRows {
-		return nil, errors.Join(err, entity.ErrDomainNotFound)
+		return nil, errors.Join(err, domain.ErrDomainNotFound)
 	}
-	return domain, err
+	return retrievedDomain, err
 }
 
-func addWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
+func addWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *domain.Domain) error {
 	whoisRecord := &models.Registration{
 		DomainID:  dbDomain.ID,
 		Created:   domain.WHOIS.Created,
@@ -48,7 +49,7 @@ func addWhois(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *e
 	return nil
 }
 
-func addDNS(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *entity.Domain) error {
+func addDNS(ctx context.Context, tx *sql.Tx, dbDomain models.Domain, domain *domain.Domain) error {
 	err := addIPv4(ctx, tx, dbDomain, domain.DNS.A)
 	if err != nil {
 		return err

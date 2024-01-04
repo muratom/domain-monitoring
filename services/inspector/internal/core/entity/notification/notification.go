@@ -1,4 +1,4 @@
-package entity
+package notification
 
 import (
 	"fmt"
@@ -11,12 +11,6 @@ const (
 
 type Notification interface {
 	AsHumanReadable() string
-}
-
-type TempNotification struct{}
-
-func (n *TempNotification) AsHumanReadable() string {
-	return "Hello"
 }
 
 type RegistrationExpiresSoonNotification struct {
@@ -117,7 +111,7 @@ func (n *NameServersNotSynchronizedNotification) AsHumanReadable() string {
 	)
 }
 
-func nilToEmpty(v interface{}) interface{} {
+func nilToEmpty(v any) any {
 	if v == nil {
 		return "<empty>"
 	}

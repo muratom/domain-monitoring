@@ -1,5 +1,5 @@
 package whois
 
-type AdapterProvider interface {
+type adapterProvider interface {
 	GetAdapterByFQDN(fqdn string) Adapter
 }

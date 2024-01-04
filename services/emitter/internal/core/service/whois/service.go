@@ -11,10 +11,10 @@ import (
 )
 
 type Service struct {
-	adapterProvider AdapterProvider
+	adapterProvider adapterProvider
 }
 
-func NewService(adapterProvider AdapterProvider) *Service {
+func NewService(adapterProvider adapterProvider) *Service {
 	return &Service{
 		adapterProvider: adapterProvider,
 	}

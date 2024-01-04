@@ -2,25 +2,26 @@ package service
 
 import (
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/changelog"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
 	"strconv"
 
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"github.com/r3labs/diff"
 )
 
 type domainDiffer interface {
-	Diff(a, b *entity.Domain) (entity.Changelog, error)
+	Diff(a, b *domain.Domain) (changelog.Changelog, error)
 }
 
 type libDomainDiffer struct{}
 
-func (d *libDomainDiffer) Diff(a, b *entity.Domain) (entity.Changelog, error) {
+func (d *libDomainDiffer) Diff(a, b *domain.Domain) (changelog.Changelog, error) {
 	diffResult, err := diff.Diff(a, b)
 	if err != nil {
 		return nil, fmt.Errorf("finding diff of domain A (%+v) and B (%+v) was failed: %w", a, b, err)
 	}
 
-	changelog := make(entity.Changelog, 0, len(diffResult))
+	changeLog := make(changelog.Changelog, 0, len(diffResult))
 	for _, diffRes := range diffResult {
 		newPath := filter(diffRes.Path, func(s string) bool {
 			_, err := strconv.Atoi(s)
@@ -28,39 +29,39 @@ func (d *libDomainDiffer) Diff(a, b *entity.Domain) (entity.Changelog, error) {
 		})
 
 		fieldType, path := getFieldTypeAndPath(newPath)
-		change := entity.Change{
+		change := changelog.Change{
 			OperationType: mapOperationType(diffRes.Type),
 			FieldType:     fieldType,
 			Path:          path,
 			From:          diffRes.From,
 			To:            diffRes.To,
 		}
-		changelog = append(changelog, change)
+		changeLog = append(changeLog, change)
 	}
 
-	return changelog, nil
+	return changeLog, nil
 }
 
-func mapOperationType(opType string) entity.OperationType {
+func mapOperationType(opType string) changelog.OperationType {
 	switch opType {
 	case diff.CREATE:
-		return entity.CREATE
+		return changelog.CREATE
 	case diff.UPDATE:
-		return entity.UPDATE
+		return changelog.UPDATE
 	case diff.DELETE:
-		return entity.DELETE
+		return changelog.DELETE
 	}
 	panic(fmt.Sprintf("failed to map operation type %v", opType))
 }
 
-func getFieldTypeAndPath(path []string) (entity.FieldType, []string) {
+func getFieldTypeAndPath(path []string) (changelog.FieldType, []string) {
 	switch path[0] {
 	case "FQDN":
-		return entity.FQDN, []string{}
+		return changelog.FQDN, []string{}
 	case "DNS":
-		return entity.DNS, path[1:]
+		return changelog.DNS, path[1:]
 	case "WHOIS":
-		return entity.WHOIS, path[1:]
+		return changelog.WHOIS, path[1:]
 	}
 	panic(fmt.Sprintf("failed to get field type and path %v", path))
 }

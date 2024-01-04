@@ -1,22 +1,22 @@
 package service
 
 import (
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 )
 
 type Item struct {
 	key   string
-	value entity.Domain
+	value domain.Domain
 }
 
 func (i *Item) Key() string {
 	return i.key
 }
 
-func (i *Item) Value() entity.Domain {
+func (i *Item) Value() domain.Domain {
 	return i.value
 }
 
@@ -24,17 +24,17 @@ type domainTTLCache interface {
 	Start()
 	Stop()
 	Get(key string) *Item
-	Set(key string, value entity.Domain, ttl time.Duration)
+	Set(key string, value domain.Domain, ttl time.Duration)
 }
 
 type libDomainTTLCache struct {
-	cache *ttlcache.Cache[string, entity.Domain]
+	cache *ttlcache.Cache[string, domain.Domain]
 }
 
 func NewLibDomainTTLCache() *libDomainTTLCache {
 	return &libDomainTTLCache{
 		cache: ttlcache.New(
-			ttlcache.WithTTL[string, entity.Domain](cacheTTL),
+			ttlcache.WithTTL[string, domain.Domain](cacheTTL),
 		),
 	}
 }
@@ -58,6 +58,6 @@ func (c *libDomainTTLCache) Get(key string) *Item {
 	}
 }
 
-func (c *libDomainTTLCache) Set(key string, value entity.Domain, ttl time.Duration) {
+func (c *libDomainTTLCache) Set(key string, value domain.Domain, ttl time.Duration) {
 	c.cache.Set(key, value, ttl)
 }

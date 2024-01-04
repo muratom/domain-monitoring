@@ -3,13 +3,12 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 	"time"
 
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres/models"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -30,8 +29,8 @@ func NewDomainRepository(dbConnection *sql.DB) *DomainRepository {
 	}
 }
 
-func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.Domain, error) {
-	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
+func (r *DomainRepository) ByFQDN(ctx context.Context, fqdn string) (*domain.Domain, error) {
+	domainEntry, err := prepareDomainEntry(ctx, fqdn, r.Conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", fqdn, err)
 	}
@@ -86,7 +85,7 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 		whoisInfo = *domainEntry.R.Registrations[0]
 	}
 
-	result := &entity.Domain{
+	result := &domain.Domain{
 		FQDN: domainEntry.FQDN,
 		WHOIS: whois.Records{
 			DomainName:  domainEntry.FQDN,
@@ -109,20 +108,20 @@ func (r *DomainRepository) GetByFQDN(ctx context.Context, fqdn string) (*entity.
 	return result, nil
 }
 
-func (r *DomainRepository) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
+func (r *DomainRepository) AllDomainsFQDN(ctx context.Context) ([]string, error) {
 	domainEntities, err := models.Domains().All(ctx, r.Conn)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching all domains FQDN: %w", err)
 	}
 
 	result := make([]string, len(domainEntities))
-	for i, domain := range domainEntities {
-		result[i] = domain.FQDN
+	for i, d := range domainEntities {
+		result[i] = d.FQDN
 	}
 	return result, nil
 }
 
-func (r *DomainRepository) GetRottenDomainsFQDN(ctx context.Context) ([]string, error) {
+func (r *DomainRepository) RottenDomainsFQDN(ctx context.Context) ([]string, error) {
 	rottenDomains, err := models.Domains(
 		qm.Where("(NOW() - updated_at) >= update_delay"),
 	).All(ctx, r.Conn)
@@ -131,13 +130,13 @@ func (r *DomainRepository) GetRottenDomainsFQDN(ctx context.Context) ([]string, 
 	}
 
 	result := make([]string, len(rottenDomains))
-	for i, domain := range rottenDomains {
-		result[i] = domain.FQDN
+	for i, d := range rottenDomains {
+		result[i] = d.FQDN
 	}
 	return result, nil
 }
 
-func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) (err error) {
+func (r *DomainRepository) Store(ctx context.Context, domain *domain.Domain) (err error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainRepository.Store", trace.WithAttributes(
 		attribute.String("FQDN", domain.FQDN),
 	))
@@ -187,9 +186,9 @@ func (r *DomainRepository) Store(ctx context.Context, domain *entity.Domain) (er
 	return nil
 }
 
-func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, storedFQDN string) (err error) {
+func (r *DomainRepository) Update(ctx context.Context, domain *domain.Domain, storedFQDN string) (err error) {
 	// Domain's FQDN may have changed
-	domainEntry, err := r.prepareDomainEntry(ctx, storedFQDN)
+	domainEntry, err := prepareDomainEntry(ctx, storedFQDN, r.Conn)
 	if err != nil {
 		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", storedFQDN, err)
 	}
@@ -240,7 +239,7 @@ func (r *DomainRepository) Update(ctx context.Context, domain *entity.Domain, st
 }
 
 func (r *DomainRepository) Delete(ctx context.Context, fqdn string) error {
-	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
+	domainEntry, err := prepareDomainEntry(ctx, fqdn, r.Conn)
 	if err != nil {
 		return fmt.Errorf("failed to fetch data from DB for FQDN (%v): %w", fqdn, err)
 	}
@@ -252,49 +251,4 @@ func (r *DomainRepository) Delete(ctx context.Context, fqdn string) error {
 	logrus.Infof("%v rows deleted for FQDN (%v)", rowsDeleted, fqdn)
 
 	return nil
-}
-
-func (r *DomainRepository) SaveChangelog(ctx context.Context, fqdn string, changelog entity.Changelog) error {
-	domainEntry, err := r.prepareDomainEntry(ctx, fqdn)
-	if err != nil {
-		return fmt.Errorf("failed to fetch data from DB for FQDN (%s): %w", fqdn, err)
-	}
-
-	rawChangelog, err := json.Marshal(changelog)
-	if err != nil {
-		return fmt.Errorf("error when making raw changelog: %w", err)
-	}
-	changelogEntry := &models.Changelog{
-		CreatedAt: time.Now(),
-		Changes:   rawChangelog,
-	}
-
-	return domainEntry.AddChangelogs(ctx, r.Conn, true, changelogEntry)
-}
-
-func (r *DomainRepository) GetChangelogs(ctx context.Context, fqdn string) ([]entity.Changelog, error) {
-	domainEntry, err := models.Domains(
-		models.DomainWhere.FQDN.EQ(fqdn),
-		qm.Load(models.DomainRels.Changelogs),
-	).One(ctx, r.Conn)
-	if err == sql.ErrNoRows {
-		return []entity.Changelog{}, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get changelog for FQDN (%v): %w", fqdn, err)
-	}
-
-	result := make([]entity.Changelog, 0, 10)
-	for _, changelogEntry := range domainEntry.R.Changelogs {
-		if changelogEntry != nil {
-			var changelog entity.Changelog
-			err := changelogEntry.Changes.Unmarshal(&changelog)
-			if err != nil {
-				return nil, fmt.Errorf("unable to unmarshal changelog from DB: %w", err)
-			}
-			result = append(result, changelog)
-		}
-	}
-
-	return result, nil
 }

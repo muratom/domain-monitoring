@@ -8,11 +8,11 @@ import (
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois/adapter/ru"
 )
 
-type HardcodeAdapterProvider struct {
+type Hardcode struct {
 	adapterByDomain map[string]whois.Adapter
 }
 
-func NewHardcodeAdapterProvider(whoisClient adapter.Client, whoisServerProvider whois.ServerProvider) *HardcodeAdapterProvider {
+func NewHardcodeAdapterProvider(whoisClient adapter.Client, whoisServerProvider whois.ServerProvider) *Hardcode {
 	ruAdapter := ru.NewAdapter(
 		whoisClient,
 		whoisServerProvider,
@@ -23,12 +23,12 @@ func NewHardcodeAdapterProvider(whoisClient adapter.Client, whoisServerProvider 
 		"xn--p1ai" /* рф */ : ruAdapter,
 	}
 
-	return &HardcodeAdapterProvider{
+	return &Hardcode{
 		adapterByDomain: adapterByDomain,
 	}
 }
 
-func (p *HardcodeAdapterProvider) GetAdapterByFQDN(fqdn string) whois.Adapter {
+func (p *Hardcode) GetAdapterByFQDN(fqdn string) whois.Adapter {
 	// Remove root zone
 	sfx := strings.TrimRight(fqdn, ".")
 	for {

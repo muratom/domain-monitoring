@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/changelog"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
 	"sort"
 	"sync/atomic"
 	"time"
 
 	"github.com/gammazero/workerpool"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -29,11 +31,12 @@ const (
 )
 
 type DomainService struct {
-	emitters         []EmitterClient
-	emitterCounter   atomic.Uint32
-	domainRepository entity.DomainRepository
-	domainDiffer     domainDiffer
-	domainTTLCache   domainTTLCache
+	emitters            []EmitterClient
+	emitterCounter      atomic.Uint32
+	domainRepository    domain.CRUDRepository
+	changelogRepository changelog.Repository
+	domainDiffer        domainDiffer
+	domainTTLCache      domainTTLCache
 
 	// TODO: add abstraction
 	dnsCache   *ttlcache.Cache[GetDNSRequest, GetDNSResponse]
@@ -42,16 +45,18 @@ type DomainService struct {
 
 func NewDomainService(
 	emitterClients []EmitterClient,
-	domainRepo entity.DomainRepository,
+	domainRepo domain.CRUDRepository,
+	changelogRepo changelog.Repository,
 	ttlCache domainTTLCache,
 ) *DomainService {
 	differ := &libDomainDiffer{}
 
 	return &DomainService{
-		emitters:         emitterClients,
-		domainRepository: domainRepo,
-		domainDiffer:     differ,
-		domainTTLCache:   ttlCache,
+		emitters:            emitterClients,
+		domainRepository:    domainRepo,
+		changelogRepository: changelogRepo,
+		domainDiffer:        differ,
+		domainTTLCache:      ttlCache,
 
 		dnsCache: ttlcache.New(
 			ttlcache.WithTTL[GetDNSRequest, GetDNSResponse](cacheTTL),
@@ -77,62 +82,62 @@ func (s *DomainService) Stop(_ context.Context) {
 	s.whoisCache.Stop()
 }
 
-func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.AddDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
-	domain, err := s.getUpdatedDomain(ctx, fqdn)
+	updatedDomain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.AddDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
-	err = s.domainRepository.Store(ctx, domain)
+	err = s.domainRepository.Store(ctx, updatedDomain)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.AddDomain: failed to store domain in the repository: %w", err)
 	}
 
-	return domain, nil
+	return updatedDomain, nil
 }
 
-func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
-	domain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
+	retrievedDomain, err := s.domainRepository.ByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.GetDomain: failed to get domain from repository: %w", err)
 	}
 
-	return domain, err
+	return retrievedDomain, err
 }
 
 func (s *DomainService) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetAllDomainsFQDN")
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.RetrieveAllDomainsFQDN")
 	defer span.End()
 
-	return s.domainRepository.GetAllDomainsFQDN(ctx)
+	return s.domainRepository.AllDomainsFQDN(ctx)
 }
 
-func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.UpdateDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
-	domain, err := s.getUpdatedDomain(ctx, fqdn)
+	updatedDomain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
-	err = s.domainRepository.Update(ctx, domain, fqdn)
+	err = s.domainRepository.Update(ctx, updatedDomain, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
 	}
-	return domain, nil
+	return updatedDomain, nil
 }
 
 func (s *DomainService) DeleteDomain(ctx context.Context, fqdn string) error {
@@ -153,14 +158,14 @@ func (s *DomainService) GetRottenDomainsFQDN(ctx context.Context) ([]string, err
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetRotternDomainsFQDN")
 	defer span.End()
 
-	return s.domainRepository.GetRottenDomainsFQDN(ctx)
+	return s.domainRepository.RottenDomainsFQDN(ctx)
 }
 
-func (s *DomainService) GetChangelogs(ctx context.Context, fqdn string) ([]entity.Changelog, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetChangelogs")
+func (s *DomainService) GetChangelogs(ctx context.Context, fqdn string) ([]changelog.Changelog, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "DomainService.Retrieve")
 	defer span.End()
 
-	return s.domainRepository.GetChangelogs(ctx, fqdn)
+	return s.changelogRepository.Retrieve(ctx, fqdn)
 }
 
 type dnsResult struct {
@@ -173,18 +178,18 @@ var (
 	errStopServing = errors.New("DNS server stopped serving a domain")
 )
 
-func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string) ([]notification.Notification, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainNameServers", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
-	domain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
+	retrievedDomain, err := s.domainRepository.ByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("error getting domain by FQDN: %w", err)
 	}
 
-	nameServers := domain.DNS.NS
+	nameServers := retrievedDomain.DNS.NS
 	requests := make([]GetDNSRequest, len(nameServers))
 	for i := range requests {
 		requests[i] = GetDNSRequest{
@@ -222,12 +227,12 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	wp.StopWait()
 	close(results)
 
-	notifications := make([]entity.Notification, 0)
+	notifications := make([]notification.Notification, 0)
 	responses := make([]GetDNSResponse, 0, len(nameServers))
 	for res := range results {
 		if res.err != nil {
 			if errors.Is(res.err, ErrStopServing) {
-				notifications = append(notifications, &entity.DomainStoppedBeingServedNotification{
+				notifications = append(notifications, &notification.DomainStoppedBeingServedNotification{
 					FQDN:           res.request.FQDN,
 					NameServerHost: res.request.DNSServerHost,
 				})
@@ -246,7 +251,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	ok, notSychronizedDNSServers := s.isDNSServersSync(responses)
 	if !ok {
 		logrus.Warnf("DomainService.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
-		notifications = append(notifications, &entity.NameServersNotSynchronizedNotification{
+		notifications = append(notifications, &notification.NameServersNotSynchronizedNotification{
 			FQDN:                       fqdn,
 			NotSynchronizedNameServers: notSychronizedDNSServers,
 		})
@@ -255,7 +260,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	return notifications, nil
 }
 
-func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string) ([]notification.Notification, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainRegistration", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
@@ -267,75 +272,75 @@ func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string
 		return nil, fmt.Errorf("error getting registration information: %w", err)
 	}
 
-	notifications := make([]entity.Notification, 0, 2)
+	notifications := make([]notification.Notification, 0, 2)
 
 	expiringSoonTimestamp := whoisResp.Records.PaidTill.Add(-expiringDomainThreshold)
 	if time.Now().After(expiringSoonTimestamp) {
 		// Domain registration is going to expire
-		notification := &entity.RegistrationExpiresSoonNotification{
+		n := &notification.RegistrationExpiresSoonNotification{
 			FQDN:      fqdn,
 			Registrar: whoisResp.Records.Registrar,
 			PaidTill:  whoisResp.Records.PaidTill,
 		}
-		notifications = append(notifications, notification)
+		notifications = append(notifications, n)
 	} else if time.Now().After(whoisResp.Records.PaidTill) {
 		// Domain has been expired
-		notification := &entity.RegistrationExpiredNotification{
+		n := &notification.RegistrationExpiredNotification{
 			FQDN:      fqdn,
 			Registrar: whoisResp.Records.Registrar,
 			PaidTill:  whoisResp.Records.PaidTill,
 		}
-		notifications = append(notifications, notification)
+		notifications = append(notifications, n)
 	}
 
 	return notifications, nil
 }
 
-func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]entity.Notification, error) {
+func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]notification.Notification, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainChanges", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
-	changelog, err := s.getDomainChanges(ctx, fqdn)
+	changes, err := s.getDomainChanges(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("error getting domain changes: %w", err)
 	}
 
-	if len(changelog) != 0 {
-		err := s.domainRepository.SaveChangelog(ctx, fqdn, changelog)
+	if len(changes) != 0 {
+		err := s.changelogRepository.Store(ctx, fqdn, changes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to save changelog: %w", err)
 		}
 	}
 
-	notifications := make([]entity.Notification, 0)
-	for _, change := range changelog {
+	notifications := make([]notification.Notification, 0)
+	for _, change := range changes {
 		switch change.FieldType {
-		case entity.FQDN:
-			notification := &entity.DomainNameChangedNotification{
+		case changelog.FQDN:
+			n := &notification.DomainNameChangedNotification{
 				Old: change.From.(string),
 				New: change.To.(string),
 			}
-			notifications = append(notifications, notification)
-		case entity.DNS:
+			notifications = append(notifications, n)
+		case changelog.DNS:
 			recordType, path := change.Path[0], change.Path[1:]
-			notification := &entity.ResourceRecordChangedNotification{
+			n := &notification.ResourceRecordChangedNotification{
 				FQDN:       fqdn,
 				RecordType: recordType,
 				Path:       path,
 				From:       change.From,
 				To:         change.To,
 			}
-			notifications = append(notifications, notification)
-		case entity.WHOIS:
-			notification := &entity.RegistrationInfoChangedNotification{
+			notifications = append(notifications, n)
+		case changelog.WHOIS:
+			n := &notification.RegistrationInfoChangedNotification{
 				FQDN: fqdn,
 				Path: change.Path,
 				From: change.From,
 				To:   change.To,
 			}
-			notifications = append(notifications, notification)
+			notifications = append(notifications, n)
 		}
 	}
 
@@ -352,7 +357,7 @@ type whoisResponse struct {
 	err      error
 }
 
-func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*entity.Domain, error) {
+func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "DomainService.getUpdatedDomain", trace.WithAttributes(
 		attribute.Bool("from_cache", false),
 	))
@@ -360,8 +365,8 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 
 	if item := s.domainTTLCache.Get(fqdn); item != nil {
 		span.SetAttributes(attribute.Bool("from_cache", true))
-		domain := item.Value()
-		return &domain, nil
+		cachedDomain := item.Value()
+		return &cachedDomain, nil
 	}
 
 	dnsChan := make(chan dnsResponse)
@@ -394,7 +399,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 	}
 	whoisRecords := whoisResponse.response
 
-	domain := &entity.Domain{
+	updatedDomain := &domain.Domain{
 		FQDN: fqdn,
 		WHOIS: whois.Records{
 			DomainName:  whoisRecords.Records.DomainName,
@@ -414,13 +419,13 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*ent
 		},
 	}
 
-	s.domainTTLCache.Set(fqdn, *domain, ttlcache.DefaultTTL)
+	s.domainTTLCache.Set(fqdn, *updatedDomain, ttlcache.DefaultTTL)
 
-	return domain, nil
+	return updatedDomain, nil
 }
 
-func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (entity.Changelog, error) {
-	rottenDomain, err := s.domainRepository.GetByFQDN(ctx, fqdn)
+func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (changelog.Changelog, error) {
+	rottenDomain, err := s.domainRepository.ByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch domain (%v) data from DB: %w", fqdn, err)
 	}
@@ -430,11 +435,11 @@ func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (enti
 		return nil, fmt.Errorf("error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
-	changelog, err := s.domainDiffer.Diff(rottenDomain, freshDomain)
+	changes, err := s.domainDiffer.Diff(rottenDomain, freshDomain)
 	if err != nil {
 		return nil, fmt.Errorf("error making diff between domains: %w", err)
 	}
-	return changelog, nil
+	return changes, nil
 }
 
 func (s *DomainService) getEmitterClient(ctx context.Context) EmitterClient {

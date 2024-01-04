@@ -3,9 +3,8 @@ package service
 import (
 	"context"
 	"errors"
-
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 )
 
 type GetDNSRequest struct {

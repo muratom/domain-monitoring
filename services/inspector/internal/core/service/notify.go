@@ -2,19 +2,19 @@ package service
 
 import (
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
 
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"gopkg.in/gomail.v2"
 )
 
 // TODO: move to App.New
 type Notifier interface {
-	Notify(notifications []entity.Notification) error
+	Notify(notifications []notification.Notification) error
 }
 
 type StdoutNotifier struct{}
 
-func (s *StdoutNotifier) Notify(notifications []entity.Notification) error {
+func (s *StdoutNotifier) Notify(notifications []notification.Notification) error {
 	for _, notification := range notifications {
 		fmt.Println(notification.AsHumanReadable())
 	}
@@ -41,7 +41,7 @@ func NewMailNotifier(from, to, username, password, smtpHost string, smtpPort int
 	}
 }
 
-func (s *MailNotifier) Notify(notifications []entity.Notification) error {
+func (s *MailNotifier) Notify(notifications []notification.Notification) error {
 	m := gomail.NewMessage()
 	m.SetHeaders(map[string][]string{
 		"From":    {s.from},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -19,7 +20,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/timeout"
 	"github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter-client"
 	inspectorserver "github.com/muratom/domain-monitoring/services/inspector/internal/delivery/http"
@@ -36,17 +36,6 @@ const (
 )
 
 func main() {
-	// go func() {
-	// 	for {
-	// 		info, _ := load.Avg()
-	// 		logrus.Infof("%v", info)
-	// 		v, _ := mem.VirtualMemory()
-	// 		fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
-
-	// 		time.Sleep(500 * time.Millisecond)
-	// 	}
-	// }()
-
 	tp := tracing.InitTracer("inspector", "http://jaeger:14268/api/traces")
 	defer func() {
 		err := tp.Shutdown(context.Background())
@@ -88,10 +77,11 @@ func main() {
 		logrus.Fatalf("connection to DB was failed: %v", err)
 	}
 	logrus.Infof("successfully connect to a database")
-	repo := postgres.NewDomainRepository(dbConn)
+	domainRepository := postgres.NewDomainRepository(dbConn)
+	changelogRepository := postgres.NewChangelogRepository(dbConn)
 	ttlCache := service.NewLibDomainTTLCache()
 
-	domainService := service.NewDomainService(emitters, repo, ttlCache)
+	domainService := service.NewDomainService(emitters, domainRepository, changelogRepository, ttlCache)
 	domainService.Start(ctx)
 	defer domainService.Stop(ctx)
 
@@ -130,7 +120,7 @@ func main() {
 							attribute.String("FQDN", fqdn),
 						))
 
-						var notifications []entity.Notification
+						var notifications []notification.Notification
 						nots, err := domainService.CheckDomainNameServers(ctx, fqdn)
 						if err != nil {
 							logrus.Warnf("failed to check name servers for FQDN (%v): %v", fqdn, err)
@@ -193,7 +183,7 @@ func main() {
 }
 
 type checkResult struct {
-	notifications []entity.Notification
+	notifications []notification.Notification
 	err           error
 }
 

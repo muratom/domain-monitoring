@@ -7,13 +7,13 @@ import (
 	"github.com/zonedb/zonedb"
 )
 
-type ZoneDBServerProvider struct{}
+type ZoneDB struct{}
 
-func NewZoneDBServerProvider() *ZoneDBServerProvider {
-	return &ZoneDBServerProvider{}
+func NewZoneDBServerProvider() *ZoneDB {
+	return &ZoneDB{}
 }
 
-func (p *ZoneDBServerProvider) GetServerByDomain(domain string) (string, error) {
+func (p *ZoneDB) GetServerByDomain(domain string) (string, error) {
 	z := zonedb.PublicZone(domain)
 	if z == nil {
 		return "", fmt.Errorf("failed to get a public DNS zone for the domain (%s)", domain)

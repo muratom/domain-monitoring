@@ -3,10 +3,9 @@ package emitterclient
 import (
 	"context"
 	"fmt"
-
 	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/dns"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/whois"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
@@ -50,7 +49,7 @@ func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSReque
 	return buildDNSResponse(ctx, req, pbResponse), nil
 }
 
-func buildDNSResponse(ctx context.Context, req *service.GetDNSRequest, dnsResponse *pb.GetDNSResponse) *service.GetDNSResponse {
+func buildDNSResponse(_ context.Context, req *service.GetDNSRequest, dnsResponse *pb.GetDNSResponse) *service.GetDNSResponse {
 	mx := make([]dns.MX, len(dnsResponse.ResourceRecords.MX))
 	for i, m := range dnsResponse.ResourceRecords.MX {
 		mx[i] = dns.MX{

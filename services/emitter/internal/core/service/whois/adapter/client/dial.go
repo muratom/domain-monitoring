@@ -10,19 +10,19 @@ import (
 	"github.com/muratom/domain-monitoring/services/emitter/internal/core/service/whois"
 )
 
-type DialClient struct {
+type Dial struct {
 	dialer net.Dialer
 }
 
-func NewWhoisClient(timeout time.Duration) *DialClient {
-	return &DialClient{
+func NewWhoisClient(timeout time.Duration) *Dial {
+	return &Dial{
 		dialer: net.Dialer{
 			Timeout: timeout,
 		},
 	}
 }
 
-func (c *DialClient) FetchWhois(ctx context.Context, req *whois.Request) (*whois.Response, error) {
+func (c *Dial) FetchWhois(ctx context.Context, req *whois.Request) (*whois.Response, error) {
 	address := fmt.Sprintf("%s:43", req.WhoisServer)
 	conn, err := c.dialer.DialContext(ctx, "tcp", address)
 	if err != nil {

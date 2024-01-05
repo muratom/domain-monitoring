@@ -237,12 +237,12 @@ func (s *Service) CheckDomainNameServers(ctx context.Context, fqdn string) ([]no
 		return nil, fmt.Errorf("no responses w/o error from emitters")
 	}
 
-	ok, notSychronizedDNSServers := s.isDNSServersSync(responses)
+	ok, notSynchronizedDNSServers := s.isDNSServersSync(responses)
 	if !ok {
-		logrus.Warnf("Service.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
+		logrus.Warnf("DNS servers are not synchronized for FQDN (%v)", fqdn)
 		notifications = append(notifications, &notification.NameServersNotSynchronizedNotification{
 			FQDN:                       fqdn,
-			NotSynchronizedNameServers: notSychronizedDNSServers,
+			NotSynchronizedNameServers: notSynchronizedDNSServers,
 		})
 	}
 
@@ -466,9 +466,8 @@ func (s *Service) isDNSServersSync(responses []GetDNSResponse) (bool, []string) 
 	baseResponse := responses[0]
 	baseResponseResourceRecords := baseResponse.ResourceRecords
 	syncWithBase := []string{baseResponse.Request.DNSServerHost}
-	notSyncWithBase := []string{}
+	var notSyncWithBase []string
 	for _, resp := range responses[1:] {
-		// if !reflect.DeepEqual(resp.ResourceRecords, baseResponseResourceRecords) {
 		if !compareResourceRecords(resp.ResourceRecords, baseResponseResourceRecords) {
 			notSyncWithBase = append(notSyncWithBase, resp.Request.DNSServerHost)
 		} else {

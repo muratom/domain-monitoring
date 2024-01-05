@@ -1,11 +1,12 @@
-package service
+package cache
 
 import (
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"time"
 )
 
 type Cache[K comparable, V any] interface {
-	Runnable
+	service.Runnable
 	Get(key K) *V
 	Set(key K, value V, opts ...CacheOption)
 }

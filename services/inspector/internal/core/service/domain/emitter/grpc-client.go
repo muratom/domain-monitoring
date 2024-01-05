@@ -6,7 +6,7 @@ import (
 	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,7 +23,7 @@ func NewGrpcEmitterClient(cc *grpc.ClientConn) *grpcEmitterClient {
 	}
 }
 
-func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSRequest) (*service.GetDNSResponse, error) {
+func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *domain.GetDNSRequest) (*domain.GetDNSResponse, error) {
 	pbRequest := &pb.GetDNSRequest{
 		Fqdn: req.FQDN,
 		Host: req.DNSServerHost,
@@ -37,7 +37,7 @@ func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSReque
 				switch d := details.(type) {
 				case *errdetails.ErrorInfo:
 					if d.Domain == "emitter" && d.Reason == "STOP_SERVING" {
-						return nil, service.ErrStopServing
+						return nil, domain.ErrStopServing
 					}
 				}
 			}
@@ -49,7 +49,7 @@ func (c *grpcEmitterClient) GetDNS(ctx context.Context, req *service.GetDNSReque
 	return buildDNSResponse(ctx, req, pbResponse), nil
 }
 
-func buildDNSResponse(_ context.Context, req *service.GetDNSRequest, dnsResponse *pb.GetDNSResponse) *service.GetDNSResponse {
+func buildDNSResponse(_ context.Context, req *domain.GetDNSRequest, dnsResponse *pb.GetDNSResponse) *domain.GetDNSResponse {
 	mx := make([]dns.MX, len(dnsResponse.ResourceRecords.MX))
 	for i, m := range dnsResponse.ResourceRecords.MX {
 		mx[i] = dns.MX{
@@ -85,13 +85,13 @@ func buildDNSResponse(_ context.Context, req *service.GetDNSRequest, dnsResponse
 	// Sort resource records because DNS servers can return same values in different order
 	resourceRecords.Sort()
 
-	return &service.GetDNSResponse{
+	return &domain.GetDNSResponse{
 		Request:         *req,
 		ResourceRecords: *resourceRecords,
 	}
 }
 
-func (c *grpcEmitterClient) GetWhois(ctx context.Context, req *service.GetWhoisRequest) (*service.GetWhoisResponse, error) {
+func (c *grpcEmitterClient) GetWhois(ctx context.Context, req *domain.GetWhoisRequest) (*domain.GetWhoisResponse, error) {
 	pbRequest := &pb.GetWhoisRequest{
 		Fqdn: req.FQDN,
 	}
@@ -100,7 +100,7 @@ func (c *grpcEmitterClient) GetWhois(ctx context.Context, req *service.GetWhoisR
 		return nil, fmt.Errorf("emitter gRPC client's call failed: %w", err)
 	}
 
-	return &service.GetWhoisResponse{
+	return &domain.GetWhoisResponse{
 		Request: *req,
 		Records: whois.Records{
 			DomainName:  pbResponse.GetRecords().GetDomainName(),

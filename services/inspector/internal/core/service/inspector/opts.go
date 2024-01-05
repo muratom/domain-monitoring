@@ -1,7 +1,6 @@
 package inspector
 
 import (
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"time"
 )
 
@@ -19,7 +18,7 @@ func WithWorkerNumber(n int) Option {
 	}
 }
 
-func WithNotifiers(ns []service.Notifier) Option {
+func WithNotifiers(ns []Notifier) Option {
 	return func(s *Service) {
 		s.notifiers = ns
 	}

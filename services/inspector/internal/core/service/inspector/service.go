@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gammazero/workerpool"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,7 +17,7 @@ type Service struct {
 	domainRetriever retriever
 	tick            time.Duration
 	workerNumber    int
-	notifiers       []service.Notifier
+	notifiers       []Notifier
 	closeChan       chan struct{}
 }
 

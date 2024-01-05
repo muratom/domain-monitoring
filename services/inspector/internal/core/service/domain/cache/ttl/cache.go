@@ -3,7 +3,7 @@ package ttl
 import (
 	"context"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/cache"
 	"time"
 )
 
@@ -32,8 +32,8 @@ func (c *Cache[K, V]) Get(key K) *V {
 	return &result
 }
 
-func (c *Cache[K, V]) Set(key K, value V, opts ...service.CacheOption) {
-	config := new(service.CacheConfig)
+func (c *Cache[K, V]) Set(key K, value V, opts ...cache.CacheOption) {
+	config := new(cache.CacheConfig)
 	for _, opt := range opts {
 		opt(config)
 	}

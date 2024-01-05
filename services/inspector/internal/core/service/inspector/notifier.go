@@ -1,4 +1,4 @@
-package service
+package inspector
 
 import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"

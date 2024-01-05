@@ -9,9 +9,9 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/cache/ttl"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/differ/lib"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/cache"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/cache/ttl"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/differ/lib"
 	"sort"
 	"sync/atomic"
 	"time"
@@ -32,21 +32,21 @@ const (
 )
 
 type Service struct {
-	emitters       []service.EmitterClient
+	emitters       []EmitterClient
 	emitterCounter atomic.Uint32
 
 	domainRepository    domain.CRUDRepository
 	changelogRepository changelog.Repository
 
-	domainDiffer service.DomainDiffer
+	domainDiffer Differ
 
-	domainCache service.Cache[string, domain.Domain]
-	dnsCache    service.Cache[service.GetDNSRequest, service.GetDNSResponse]
-	whoisCache  service.Cache[service.GetWhoisRequest, service.GetWhoisResponse]
+	domainCache cache.Cache[string, domain.Domain]
+	dnsCache    cache.Cache[GetDNSRequest, GetDNSResponse]
+	whoisCache  cache.Cache[GetWhoisRequest, GetWhoisResponse]
 }
 
 func New(
-	emitterClients []service.EmitterClient,
+	emitterClients []EmitterClient,
 	domainRepo domain.CRUDRepository,
 	changelogRepo changelog.Repository,
 	opts ...Option,
@@ -57,8 +57,8 @@ func New(
 		changelogRepository: changelogRepo,
 		domainDiffer:        &lib.Differ{},
 		domainCache:         ttl.New[string, domain.Domain](),
-		dnsCache:            ttl.New[service.GetDNSRequest, service.GetDNSResponse](),
-		whoisCache:          ttl.New[service.GetWhoisRequest, service.GetWhoisResponse](),
+		dnsCache:            ttl.New[GetDNSRequest, GetDNSResponse](),
+		whoisCache:          ttl.New[GetWhoisRequest, GetWhoisResponse](),
 	}
 
 	for _, opt := range opts {
@@ -179,9 +179,9 @@ func (s *Service) CheckDomainNameServers(ctx context.Context, fqdn string) ([]no
 	}
 
 	nameServers := retrievedDomain.DNS.NS
-	requests := make([]service.GetDNSRequest, len(nameServers))
+	requests := make([]GetDNSRequest, len(nameServers))
 	for i := range requests {
-		requests[i] = service.GetDNSRequest{
+		requests[i] = GetDNSRequest{
 			FQDN:          fqdn,
 			DNSServerHost: nameServers[i].Host,
 		}
@@ -217,10 +217,10 @@ func (s *Service) CheckDomainNameServers(ctx context.Context, fqdn string) ([]no
 	close(results)
 
 	notifications := make([]notification.Notification, 0)
-	responses := make([]service.GetDNSResponse, 0, len(nameServers))
+	responses := make([]GetDNSResponse, 0, len(nameServers))
 	for res := range results {
 		if res.err != nil {
-			if errors.Is(res.err, service.ErrStopServing) {
+			if errors.Is(res.err, ErrStopServing) {
 				notifications = append(notifications, &notification.DomainStoppedBeingServedNotification{
 					FQDN:           res.request.FQDN,
 					NameServerHost: res.request.DNSServerHost,
@@ -256,7 +256,7 @@ func (s *Service) CheckDomainRegistration(ctx context.Context, fqdn string) ([]n
 	defer span.End()
 
 	emitter := s.getEmitterClient(ctx)
-	whoisResp, err := emitter.GetWhois(ctx, &service.GetWhoisRequest{FQDN: fqdn})
+	whoisResp, err := emitter.GetWhois(ctx, &GetWhoisRequest{FQDN: fqdn})
 	if err != nil {
 		return nil, fmt.Errorf("error getting registration information: %w", err)
 	}
@@ -349,7 +349,7 @@ func (s *Service) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Do
 
 	dnsChan := make(chan dnsResponse)
 	go func() {
-		dnsRecords, err := s.getDNS(ctx, service.GetDNSRequest{FQDN: fqdn})
+		dnsRecords, err := s.getDNS(ctx, GetDNSRequest{FQDN: fqdn})
 		dnsChan <- dnsResponse{
 			response: dnsRecords,
 			err:      err,
@@ -358,7 +358,7 @@ func (s *Service) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Do
 
 	whoisChan := make(chan whoisResponse)
 	go func() {
-		whoisRecords, err := s.getWhois(ctx, service.GetWhoisRequest{FQDN: fqdn})
+		whoisRecords, err := s.getWhois(ctx, GetWhoisRequest{FQDN: fqdn})
 		whoisChan <- whoisResponse{
 			response: whoisRecords,
 			err:      err,
@@ -420,14 +420,14 @@ func (s *Service) getDomainChanges(ctx context.Context, fqdn string) (changelog.
 	return changes, nil
 }
 
-func (s *Service) getEmitterClient(ctx context.Context) service.EmitterClient {
+func (s *Service) getEmitterClient(ctx context.Context) EmitterClient {
 	index := s.emitterCounter.Add(1) % uint32(len(s.emitters))
 	return s.emitters[index]
 }
 
-func (s *Service) getDNS(ctx context.Context, req service.GetDNSRequest) (*service.GetDNSResponse, error) {
+func (s *Service) getDNS(ctx context.Context, req GetDNSRequest) (*GetDNSResponse, error) {
 	if resp := s.dnsCache.Get(req); resp != nil {
-		logrus.Info("retrieve DNS response from cache for req (%+v)", req)
+		logrus.Infof("retrieve DNS response from cache for req (%+v)", req)
 		return resp, nil
 	}
 
@@ -442,9 +442,9 @@ func (s *Service) getDNS(ctx context.Context, req service.GetDNSRequest) (*servi
 	return resp, nil
 }
 
-func (s *Service) getWhois(ctx context.Context, req service.GetWhoisRequest) (*service.GetWhoisResponse, error) {
+func (s *Service) getWhois(ctx context.Context, req GetWhoisRequest) (*GetWhoisResponse, error) {
 	if resp := s.whoisCache.Get(req); resp != nil {
-		logrus.Info("retrieve Whois response from cache for req (%+v)", req)
+		logrus.Infof("retrieve Whois response from cache for req (%+v)", req)
 		return resp, nil
 	}
 
@@ -459,7 +459,7 @@ func (s *Service) getWhois(ctx context.Context, req service.GetWhoisRequest) (*s
 	return resp, nil
 }
 
-func (s *Service) isDNSServersSync(responses []service.GetDNSResponse) (bool, []string) {
+func (s *Service) isDNSServersSync(responses []GetDNSResponse) (bool, []string) {
 	if len(responses) == 1 {
 		return true, nil
 	}
@@ -488,18 +488,18 @@ func (s *Service) isDNSServersSync(responses []service.GetDNSResponse) (bool, []
 }
 
 type dnsResult struct {
-	response *service.GetDNSResponse
-	request  *service.GetDNSRequest
+	response *GetDNSResponse
+	request  *GetDNSRequest
 	err      error
 }
 
 type dnsResponse struct {
-	response *service.GetDNSResponse
+	response *GetDNSResponse
 	err      error
 }
 
 type whoisResponse struct {
-	response *service.GetWhoisResponse
+	response *GetWhoisResponse
 	err      error
 }
 

@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/inspector"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/notifier/stdout"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/inspector/notifier/stdout"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -16,8 +17,6 @@ import (
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	rpc_inspector "github.com/muratom/domain-monitoring/api/rpc/v1/inspector"
-	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
-	emitterclient "github.com/muratom/domain-monitoring/services/inspector/internal/core/service/emitter"
 	inspectorserver "github.com/muratom/domain-monitoring/services/inspector/internal/delivery/http"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/repository/postgres"
 	"github.com/muratom/domain-monitoring/services/inspector/tools/tracing"
@@ -48,7 +47,7 @@ func main() {
 		"emitter_1:8080",
 		"emitter_2:8080",
 	}
-	emitters := make([]service.EmitterClient, 0, len(emitterAddresses))
+	emitters := make([]domain.EmitterClient, 0, len(emitterAddresses))
 	for _, address := range emitterAddresses {
 		conn, err := grpc.DialContext(
 			ctx,
@@ -82,7 +81,7 @@ func main() {
 
 	// mailNotifier := service.NewMailNotifier("<from>", "<to>", "<username>", "<password>", "<smtp_host>", 42)
 	stdoutNotifier := stdout.New()
-	notifiers := []service.Notifier{
+	notifiers := []inspector.Notifier{
 		stdoutNotifier,
 		// mailNotifier,
 	}

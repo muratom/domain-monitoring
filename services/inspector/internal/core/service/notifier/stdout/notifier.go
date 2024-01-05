@@ -11,7 +11,11 @@ func New() *Notifier {
 	return new(Notifier)
 }
 
-func (s *Notifier) Notify(notifications []notification.Notification) error {
+func (n *Notifier) Name() string {
+	return "stdout"
+}
+
+func (n *Notifier) Notify(notifications []notification.Notification) error {
 	for _, n := range notifications {
 		fmt.Println(n.AsHumanReadable())
 	}

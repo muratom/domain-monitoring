@@ -6,4 +6,5 @@ import (
 
 type Notifier interface {
 	Notify(notifications []notification.Notification) error
+	Name() string
 }

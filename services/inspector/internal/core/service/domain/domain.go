@@ -1,4 +1,4 @@
-package service
+package domain
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/dns"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/domain/whois"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/entity/notification"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/cache/ttl"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/differ/lib"
 	"sort"
@@ -30,144 +31,144 @@ const (
 	expiringDomainThreshold = 30 * 24 * time.Hour // 1 month
 )
 
-type DomainService struct {
-	emitters       []EmitterClient
+type Service struct {
+	emitters       []service.EmitterClient
 	emitterCounter atomic.Uint32
 
 	domainRepository    domain.CRUDRepository
 	changelogRepository changelog.Repository
 
-	domainDiffer DomainDiffer
+	domainDiffer service.DomainDiffer
 
-	domainCache Cache[string, domain.Domain]
-	dnsCache    Cache[GetDNSRequest, GetDNSResponse]
-	whoisCache  Cache[GetWhoisRequest, GetWhoisResponse]
+	domainCache service.Cache[string, domain.Domain]
+	dnsCache    service.Cache[service.GetDNSRequest, service.GetDNSResponse]
+	whoisCache  service.Cache[service.GetWhoisRequest, service.GetWhoisResponse]
 }
 
-func NewDomainService(
-	emitterClients []EmitterClient,
+func New(
+	emitterClients []service.EmitterClient,
 	domainRepo domain.CRUDRepository,
 	changelogRepo changelog.Repository,
 	opts ...Option,
-) *DomainService {
-	service := &DomainService{
+) *Service {
+	s := &Service{
 		emitters:            emitterClients,
 		domainRepository:    domainRepo,
 		changelogRepository: changelogRepo,
 		domainDiffer:        &lib.Differ{},
 		domainCache:         ttl.New[string, domain.Domain](),
-		dnsCache:            ttl.New[GetDNSRequest, GetDNSResponse](),
-		whoisCache:          ttl.New[GetWhoisRequest, GetWhoisResponse](),
+		dnsCache:            ttl.New[service.GetDNSRequest, service.GetDNSResponse](),
+		whoisCache:          ttl.New[service.GetWhoisRequest, service.GetWhoisResponse](),
 	}
 
 	for _, opt := range opts {
-		opt(service)
+		opt(s)
 	}
 
-	return service
+	return s
 }
 
-func (s *DomainService) Start(_ context.Context) {
+func (s *Service) Start(ctx context.Context) {
 	// Enable an automatic removal of expired items
-	s.domainCache.Start()
-	s.dnsCache.Start()
-	s.whoisCache.Start()
+	s.domainCache.Start(ctx)
+	s.dnsCache.Start(ctx)
+	s.whoisCache.Start(ctx)
 }
 
-func (s *DomainService) Stop(_ context.Context) {
-	s.domainCache.Stop()
-	s.dnsCache.Stop()
-	s.whoisCache.Stop()
+func (s *Service) Stop(ctx context.Context) {
+	s.domainCache.Stop(ctx)
+	s.dnsCache.Stop(ctx)
+	s.whoisCache.Stop(ctx)
 }
 
-func (s *DomainService) AddDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.AddDomain", trace.WithAttributes(
+func (s *Service) AddDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.AddDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
 	updatedDomain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.AddDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
+		return nil, fmt.Errorf("Service.AddDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
 	err = s.domainRepository.Store(ctx, updatedDomain)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.AddDomain: failed to store domain in the repository: %w", err)
+		return nil, fmt.Errorf("Service.AddDomain: failed to store domain in the repository: %w", err)
 	}
 
 	return updatedDomain, nil
 }
 
-func (s *DomainService) GetDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetDomain", trace.WithAttributes(
+func (s *Service) GetDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.GetDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
 	retrievedDomain, err := s.domainRepository.ByFQDN(ctx, fqdn)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.GetDomain: failed to get domain from repository: %w", err)
+		return nil, fmt.Errorf("Service.GetDomain: failed to get domain from repository: %w", err)
 	}
 
 	return retrievedDomain, err
 }
 
-func (s *DomainService) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.RetrieveAllDomainsFQDN")
+func (s *Service) GetAllDomainsFQDN(ctx context.Context) ([]string, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.RetrieveAllDomainsFQDN")
 	defer span.End()
 
 	return s.domainRepository.AllDomainsFQDN(ctx)
 }
 
-func (s *DomainService) UpdateDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.UpdateDomain", trace.WithAttributes(
+func (s *Service) UpdateDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.UpdateDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
 	updatedDomain, err := s.getUpdatedDomain(ctx, fqdn)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
+		return nil, fmt.Errorf("Service.UpdateDomain: error getting updated domain data for FQDN (%v): %w", fqdn, err)
 	}
 
 	err = s.domainRepository.Update(ctx, updatedDomain, fqdn)
 	if err != nil {
-		return nil, fmt.Errorf("DomainService.UpdateDomain: failed to store domain in the repository: %w", err)
+		return nil, fmt.Errorf("Service.UpdateDomain: failed to store domain in the repository: %w", err)
 	}
 	return updatedDomain, nil
 }
 
-func (s *DomainService) DeleteDomain(ctx context.Context, fqdn string) error {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.DeleteDomain", trace.WithAttributes(
+func (s *Service) DeleteDomain(ctx context.Context, fqdn string) error {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.DeleteDomain", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
 	err := s.domainRepository.Delete(ctx, fqdn)
 	if err != nil {
-		return fmt.Errorf("DomainService.DeleteDomain: failed to delete domain: %w", err)
+		return fmt.Errorf("Service.DeleteDomain: failed to delete domain: %w", err)
 	}
 
 	return nil
 }
 
-func (s *DomainService) GetRottenDomainsFQDN(ctx context.Context) ([]string, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.GetRotternDomainsFQDN")
+func (s *Service) RetrieveRottenDomainsFQDN(ctx context.Context) ([]string, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.RetrieveRottenDomainsFQDN")
 	defer span.End()
 
 	return s.domainRepository.RottenDomainsFQDN(ctx)
 }
 
-func (s *DomainService) GetChangelogs(ctx context.Context, fqdn string) ([]changelog.Changelog, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.Retrieve")
+func (s *Service) GetChangelogs(ctx context.Context, fqdn string) ([]changelog.Changelog, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.Retrieve")
 	defer span.End()
 
 	return s.changelogRepository.Retrieve(ctx, fqdn)
 }
 
-func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string) ([]notification.Notification, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainNameServers", trace.WithAttributes(
+func (s *Service) CheckDomainNameServers(ctx context.Context, fqdn string) ([]notification.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.CheckDomainNameServers", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
@@ -178,9 +179,9 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	}
 
 	nameServers := retrievedDomain.DNS.NS
-	requests := make([]GetDNSRequest, len(nameServers))
+	requests := make([]service.GetDNSRequest, len(nameServers))
 	for i := range requests {
-		requests[i] = GetDNSRequest{
+		requests[i] = service.GetDNSRequest{
 			FQDN:          fqdn,
 			DNSServerHost: nameServers[i].Host,
 		}
@@ -194,7 +195,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 		wp.Submit(func() {
 			ctx, cancel := context.WithCancel(ctx)
 
-			ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainNameServers.worker", trace.WithAttributes(
+			ctx, span := otel.Tracer("").Start(ctx, "Service.CheckDomainNameServers.worker", trace.WithAttributes(
 				attribute.String("FQDN", req.FQDN),
 				attribute.String("DNS server", req.DNSServerHost),
 			))
@@ -216,10 +217,10 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	close(results)
 
 	notifications := make([]notification.Notification, 0)
-	responses := make([]GetDNSResponse, 0, len(nameServers))
+	responses := make([]service.GetDNSResponse, 0, len(nameServers))
 	for res := range results {
 		if res.err != nil {
-			if errors.Is(res.err, ErrStopServing) {
+			if errors.Is(res.err, service.ErrStopServing) {
 				notifications = append(notifications, &notification.DomainStoppedBeingServedNotification{
 					FQDN:           res.request.FQDN,
 					NameServerHost: res.request.DNSServerHost,
@@ -238,7 +239,7 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 
 	ok, notSychronizedDNSServers := s.isDNSServersSync(responses)
 	if !ok {
-		logrus.Warnf("DomainService.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
+		logrus.Warnf("Service.CheckDNSService. DNS servers is not synchronized for FQND %v", fqdn)
 		notifications = append(notifications, &notification.NameServersNotSynchronizedNotification{
 			FQDN:                       fqdn,
 			NotSynchronizedNameServers: notSychronizedDNSServers,
@@ -248,14 +249,14 @@ func (s *DomainService) CheckDomainNameServers(ctx context.Context, fqdn string)
 	return notifications, nil
 }
 
-func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string) ([]notification.Notification, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainRegistration", trace.WithAttributes(
+func (s *Service) CheckDomainRegistration(ctx context.Context, fqdn string) ([]notification.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.CheckDomainRegistration", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
 
 	emitter := s.getEmitterClient(ctx)
-	whoisResp, err := emitter.GetWhois(ctx, &GetWhoisRequest{FQDN: fqdn})
+	whoisResp, err := emitter.GetWhois(ctx, &service.GetWhoisRequest{FQDN: fqdn})
 	if err != nil {
 		return nil, fmt.Errorf("error getting registration information: %w", err)
 	}
@@ -284,8 +285,8 @@ func (s *DomainService) CheckDomainRegistration(ctx context.Context, fqdn string
 	return notifications, nil
 }
 
-func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]notification.Notification, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.CheckDomainChanges", trace.WithAttributes(
+func (s *Service) CheckDomainChanges(ctx context.Context, fqdn string) ([]notification.Notification, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.CheckDomainChanges", trace.WithAttributes(
 		attribute.String("FQDN", fqdn),
 	))
 	defer span.End()
@@ -335,8 +336,8 @@ func (s *DomainService) CheckDomainChanges(ctx context.Context, fqdn string) ([]
 	return notifications, nil
 }
 
-func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
-	ctx, span := otel.Tracer("").Start(ctx, "DomainService.getUpdatedDomain", trace.WithAttributes(
+func (s *Service) getUpdatedDomain(ctx context.Context, fqdn string) (*domain.Domain, error) {
+	ctx, span := otel.Tracer("").Start(ctx, "Service.getUpdatedDomain", trace.WithAttributes(
 		attribute.Bool("from_cache", false),
 	))
 	defer span.End()
@@ -348,7 +349,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*dom
 
 	dnsChan := make(chan dnsResponse)
 	go func() {
-		dnsRecords, err := s.getDNS(ctx, GetDNSRequest{FQDN: fqdn})
+		dnsRecords, err := s.getDNS(ctx, service.GetDNSRequest{FQDN: fqdn})
 		dnsChan <- dnsResponse{
 			response: dnsRecords,
 			err:      err,
@@ -357,7 +358,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*dom
 
 	whoisChan := make(chan whoisResponse)
 	go func() {
-		whoisRecords, err := s.getWhois(ctx, GetWhoisRequest{FQDN: fqdn})
+		whoisRecords, err := s.getWhois(ctx, service.GetWhoisRequest{FQDN: fqdn})
 		whoisChan <- whoisResponse{
 			response: whoisRecords,
 			err:      err,
@@ -401,7 +402,7 @@ func (s *DomainService) getUpdatedDomain(ctx context.Context, fqdn string) (*dom
 	return updatedDomain, nil
 }
 
-func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (changelog.Changelog, error) {
+func (s *Service) getDomainChanges(ctx context.Context, fqdn string) (changelog.Changelog, error) {
 	rottenDomain, err := s.domainRepository.ByFQDN(ctx, fqdn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch domain (%v) data from DB: %w", fqdn, err)
@@ -419,12 +420,12 @@ func (s *DomainService) getDomainChanges(ctx context.Context, fqdn string) (chan
 	return changes, nil
 }
 
-func (s *DomainService) getEmitterClient(ctx context.Context) EmitterClient {
+func (s *Service) getEmitterClient(ctx context.Context) service.EmitterClient {
 	index := s.emitterCounter.Add(1) % uint32(len(s.emitters))
 	return s.emitters[index]
 }
 
-func (s *DomainService) getDNS(ctx context.Context, req GetDNSRequest) (*GetDNSResponse, error) {
+func (s *Service) getDNS(ctx context.Context, req service.GetDNSRequest) (*service.GetDNSResponse, error) {
 	if resp := s.dnsCache.Get(req); resp != nil {
 		logrus.Info("retrieve DNS response from cache for req (%+v)", req)
 		return resp, nil
@@ -441,7 +442,7 @@ func (s *DomainService) getDNS(ctx context.Context, req GetDNSRequest) (*GetDNSR
 	return resp, nil
 }
 
-func (s *DomainService) getWhois(ctx context.Context, req GetWhoisRequest) (*GetWhoisResponse, error) {
+func (s *Service) getWhois(ctx context.Context, req service.GetWhoisRequest) (*service.GetWhoisResponse, error) {
 	if resp := s.whoisCache.Get(req); resp != nil {
 		logrus.Info("retrieve Whois response from cache for req (%+v)", req)
 		return resp, nil
@@ -458,7 +459,7 @@ func (s *DomainService) getWhois(ctx context.Context, req GetWhoisRequest) (*Get
 	return resp, nil
 }
 
-func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []string) {
+func (s *Service) isDNSServersSync(responses []service.GetDNSResponse) (bool, []string) {
 	if len(responses) == 1 {
 		return true, nil
 	}
@@ -487,18 +488,18 @@ func (s *DomainService) isDNSServersSync(responses []GetDNSResponse) (bool, []st
 }
 
 type dnsResult struct {
-	response *GetDNSResponse
-	request  *GetDNSRequest
+	response *service.GetDNSResponse
+	request  *service.GetDNSRequest
 	err      error
 }
 
 type dnsResponse struct {
-	response *GetDNSResponse
+	response *service.GetDNSResponse
 	err      error
 }
 
 type whoisResponse struct {
-	response *GetWhoisResponse
+	response *service.GetWhoisResponse
 	err      error
 }
 

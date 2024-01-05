@@ -1,14 +1,16 @@
 package service
 
+import "context"
+
 type Runnable interface {
 	Startable
 	Stoppable
 }
 
 type Startable interface {
-	Start()
+	Start(ctx context.Context)
 }
 
 type Stoppable interface {
-	Stop()
+	Stop(ctx context.Context)
 }

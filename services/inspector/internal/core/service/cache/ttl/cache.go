@@ -1,6 +1,7 @@
 package ttl
 
 import (
+	"context"
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"time"
@@ -44,10 +45,10 @@ func (c *Cache[K, V]) Set(key K, value V, opts ...service.CacheOption) {
 	c.cache.Set(key, value, ttl)
 }
 
-func (c *Cache[K, V]) Start() {
+func (c *Cache[K, V]) Start(context.Context) {
 	go c.cache.Start()
 }
 
-func (c *Cache[K, V]) Stop() {
+func (c *Cache[K, V]) Stop(context.Context) {
 	c.cache.Stop()
 }

@@ -60,10 +60,7 @@ func (s NSSlice) Len() int {
 }
 
 func (s NSSlice) Less(i, j int) bool {
-	if strings.Compare(s[i].Host, s[j].Host) == -1 {
-		return true
-	}
-	return false
+	return strings.Compare(s[i].Host, s[j].Host) == -1
 }
 
 func (s NSSlice) Swap(i, j int) {

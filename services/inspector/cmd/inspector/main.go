@@ -87,8 +87,7 @@ func main() {
 		// mailNotifier,
 	}
 
-	var domainInspector DomainInspector
-	domainInspector = inspector.New(
+	var domainInspector DomainInspector = inspector.New(
 		domainService,
 		domainService,
 		domainService,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 
 	pb "github.com/muratom/domain-monitoring/api/proto/v1/emitter"
 	dnsentity "github.com/muratom/domain-monitoring/services/emitter/internal/core/domain/dns"
@@ -38,9 +39,13 @@ func (e *EmitterServer) GetDNS(ctx context.Context, req *pb.GetDNSRequest) (*pb.
 	if ctx.Err() == context.Canceled {
 		return nil, status.Errorf(codes.Canceled, "EmitterServer.GetDNS cancelled")
 	}
+
+	if ip := net.ParseIP(req.Host); ip == nil {
+		return nil, fmt.Errorf("validation error: failed to parse DNS server address (%v)", req.Host)
+	}
 	lookupParams := dns.LookupParams{
-		FQDN:          req.Fqdn,
-		DNSServerHost: req.Host,
+		FQDN:             req.Fqdn,
+		DNSServerAddress: req.Host,
 	}
 	resourceRecords, err := e.dnsService.LookupResourceRecords(ctx, lookupParams)
 	if err != nil {

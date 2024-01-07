@@ -12,10 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultConnectionTimeout = 5 * time.Second
-)
-
 type LibraryClient struct {
 	requestTimeout time.Duration
 }
@@ -35,8 +31,8 @@ func (c *LibraryClient) LookupRR(ctx context.Context, lookupParams client.Lookup
 				Timeout: c.requestTimeout,
 			}
 			dnsServer := address
-			if lookupParams.DNSServerHost != "" {
-				dnsServer = fmt.Sprintf("%v:53", lookupParams.DNSServerHost)
+			if lookupParams.DNSServerAddress != "" {
+				dnsServer = lookupParams.DNSServerAddress
 			}
 			return d.DialContext(ctx, network, dnsServer)
 		},

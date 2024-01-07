@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/domain/emitter"
 	"github.com/muratom/domain-monitoring/services/inspector/internal/core/service/inspector"
@@ -124,4 +125,8 @@ func getEchoServer() *echo.Echo {
 	e.GET("/debug/pprof/block", echo.WrapHandler(pprof.Handler("block")))
 	e.GET("/debug/pprof/mutex", echo.WrapHandler(pprof.Handler("mutex")))
 	return e
+}
+
+type DomainInspector interface {
+	service.Runnable
 }

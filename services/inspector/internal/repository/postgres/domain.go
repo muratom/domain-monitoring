@@ -155,7 +155,7 @@ func (r *DomainRepository) Store(ctx context.Context, domain *domain.Domain) (er
 
 	defer func() {
 		if err != nil {
-			logrus.Error("error stroing domain: %v", err)
+			logrus.Errorf("error stroing domain: %v", err)
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
 				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))
@@ -200,7 +200,7 @@ func (r *DomainRepository) Update(ctx context.Context, domain *domain.Domain, st
 
 	defer func() {
 		if err != nil {
-			logrus.Error("error updating domain: %v", err)
+			logrus.Errorf("error updating domain: %v", err)
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
 				panic(fmt.Sprintf("rollback of the transaction was failed: %v", rollbackErr))

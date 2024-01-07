@@ -1,9 +1,0 @@
-go 1.20
-
-use (
-	./api/proto/v1/emitter
-	./api/rpc/v1/inspector
-	./cli
-	./services/emitter
-	./services/inspector
-)

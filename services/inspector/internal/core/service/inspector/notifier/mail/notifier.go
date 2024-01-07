@@ -39,7 +39,7 @@ func (n *Notifier) Notify(notifications []notification.Notification) error {
 	})
 	var body string
 	for _, n := range notifications {
-		body += fmt.Sprintf("%n\n", n.AsHumanReadable())
+		body += fmt.Sprintf("%v\n", n.AsHumanReadable())
 	}
 	if len(body) == 0 {
 		return nil

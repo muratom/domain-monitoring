@@ -12,10 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultConnectionTimeout = 5 * time.Second
-)
-
 type LibraryClient struct {
 	requestTimeout time.Duration
 }

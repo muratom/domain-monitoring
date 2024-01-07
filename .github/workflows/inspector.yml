@@ -7,16 +7,35 @@ on:
   push:
     paths:
       - 'services/inspector/**'
+      - '.github/workflows/inspector.yml'
     branches:
       - 'main'
   pull_request:
     paths:
       - 'services/inspector/**'
+      - '.github/workflows/inspector.yml'
     branches:
       - 'main'
 
 jobs:
-
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: false
+          
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+          working-directory: ''
+          install-mode: "goinstall"
+  
   build:
     runs-on: ubuntu-latest
     defaults:

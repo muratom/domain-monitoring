@@ -20,7 +20,7 @@ type LibraryClientTestSuite struct {
 }
 
 func (s *LibraryClientTestSuite) SetupSuite() {
-	s.dnsServerMock, _ = mockdns.NewServer(map[string]mockdns.Zone{
+	dnsServerMock, err := mockdns.NewServer(map[string]mockdns.Zone{
 		"www.example.com.": {
 			CNAME: "example.com.",
 		},
@@ -45,18 +45,34 @@ func (s *LibraryClientTestSuite) SetupSuite() {
 		},
 	}, false)
 
+	if err != nil {
+		s.T().Errorf("create DNS server mock: %v", err)
+	}
+
+	s.dnsServerMock = dnsServerMock
 	s.netResolver = net.DefaultResolver
 	s.dnsServerMock.PatchNet(s.netResolver)
 }
 
 func (s *LibraryClientTestSuite) TearDownSuite() {
-	s.dnsServerMock.Close()
+	err := s.dnsServerMock.Close()
+	if err != nil {
+		s.T().Errorf("close DNS server mock: %v", err)
+	}
 	mockdns.UnpatchNet(net.DefaultResolver)
 }
 
 func (s *LibraryClientTestSuite) TestAllResourceRecords() {
+	// arrange
 	dnsClient := NewLibraryClient(1 * time.Second)
-	rr, err := dnsClient.LookupRR(context.Background(), dns.LookupParams{FQDN: "www.example.com"})
+
+	// act
+	rr, err := dnsClient.LookupRR(context.Background(), dns.LookupParams{
+		FQDN:             "example.com",
+		DNSServerAddress: s.dnsServerMock.LocalAddr().String(),
+	})
+
+	// assert
 	s.Require().NoError(err)
 	s.Require().ElementsMatch([]string{"1.2.3.4", "42.73.7.2"}, rr.A)
 	s.Require().Equal("example.com.", rr.CNAME)
@@ -83,8 +99,8 @@ func (s *LibraryClientTestSuite) TestAllResourceRecordsWithDNSServerSet() {
 	dnsClient := NewLibraryClient(1 * time.Second)
 	s.dnsServerMock.Authoritative = true
 	lookupParams := dns.LookupParams{
-		FQDN:          "www.example.com",
-		DNSServerHost: s.dnsServerMock.LocalAddr().String(),
+		FQDN:             "www.example.com",
+		DNSServerAddress: s.dnsServerMock.LocalAddr().String(),
 	}
 	rr, err := dnsClient.LookupRR(context.Background(), lookupParams)
 	s.Require().NoError(err)
@@ -113,8 +129,8 @@ func (s *LibraryClientTestSuite) TestNotServing() {
 	dnsClient := NewLibraryClient(1 * time.Second)
 	s.dnsServerMock.Authoritative = true
 	lookupParams := dns.LookupParams{
-		FQDN:          "hotstuff.com",
-		DNSServerHost: s.dnsServerMock.LocalAddr().String(),
+		FQDN:             "hotstuff.com",
+		DNSServerAddress: s.dnsServerMock.LocalAddr().String(),
 	}
 	_, err := dnsClient.LookupRR(context.Background(), lookupParams)
 	s.Require().Error(err)

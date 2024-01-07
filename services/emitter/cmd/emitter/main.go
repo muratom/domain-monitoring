@@ -36,7 +36,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", "0.0.0.0:8080")
 	if err != nil {
-		logrus.Fatalf("failed to listen:", err)
+		logrus.Fatalf("listen: %v", err)
 	}
 
 	logger := logrus.New()
